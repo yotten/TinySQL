@@ -9,8 +9,8 @@ test: testExecuteSQL.o ExecuteSQL.o
 testExecuteSQL.o: testExecuteSQL.cpp 
 	g++ -c testExecuteSQL.cpp
 
-ExecuteSQL.o: ExecuteSQL.c
-	gcc -c ExecuteSQL.c
+ExecuteSQL.o: ExecuteSQL.cpp
+	gcc -c ExecuteSQL.cpp
 
 clean:
 	rm *.o
