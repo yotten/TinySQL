@@ -121,7 +121,7 @@ typedef struct _extension_tree_node
 {
 	struct _extension_tree_node *parent; //!< 親となるノードです。根の式木の場合はNULLとなります。
 	struct _extension_tree_node *left;   //!< 左の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
-	Operator operator;                   //!< 中置される演算子です。自身が末端のとなる式木の場合の種類はNOT_TOKENとなります。
+	Operator middleOperator;             //!< 中置される演算子です。自身が末端のとなる式木の場合の種類はNOT_TOKENとなります。
 	struct _extension_tree_node *right;  //!< 右の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
 	bool inParen;                        //!< 自身がかっこにくるまれているかどうかです。
 	int parenOpenBeforeClose;            //!< 木の構築中に0以外となり、自身の左にあり、まだ閉じてないカッコの開始の数となります。
@@ -795,13 +795,13 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 
 				// 演算子(オペレーターを読み込みます。
-				Operator operator =(Operator){ .kind = NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
+				Operator middleOperator =(Operator){ .kind = NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
 
 				// 現在見ている演算子の情報を探します。
 				found = false;
 				for (int j = 0; j < sizeof(operators) / sizeof(operators[0]); ++j){
 					if (operators[j].kind == tokenCursol->kind){
-						operator = operators[j];
+						middleOperator = operators[j];
 						found = true;
 						break;
 					}
@@ -825,7 +825,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 							searched = searched->left;
 						}
 						first = false;
-					} while (!searched && tmp->parent && (tmp->parent->operator.order <= operator.order || tmp->parent->inParen));
+					} while (!searched && tmp->parent && (tmp->parent->middleOperator.order <= middleOperator.order || tmp->parent->inParen));
 
 					// 演算子のノードを新しく生成します。
 					if (MAX_EXTENSION_TREE_NODE_COUNT <= whereExtensionNodesNum){
@@ -833,7 +833,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						goto ERROR;
 					}
 					currentNode = &whereExtensionNodes[whereExtensionNodesNum++];
-					currentNode->operator = operator;
+					currentNode->middleOperator = middleOperator;
 
 					// 見つかった場所に新しいノードを配置します。これまでその位置にあったノードは左の子となるよう、親ノードと子ノードのポインタをつけかえます。
 					currentNode->parent = tmp->parent;
@@ -1117,7 +1117,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	if (whereTopNode){
 		// 既存数値の符号を計算します。
 		for (int i = 0; i < whereExtensionNodesNum; ++i){
-			if (whereExtensionNodes[i].operator.kind == NOT_TOKEN &&
+			if (whereExtensionNodes[i].middleOperator.kind == NOT_TOKEN &&
 				!*whereExtensionNodes[i].column.columnName &&
 				whereExtensionNodes[i].value.type == INTEGER){
 				whereExtensionNodes[i].value.value.integer *= whereExtensionNodes[i].signCoefficient;
@@ -1197,7 +1197,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				}
 
 				// 自ノードの値を計算します。
-				switch (currentNode->operator.kind){
+				switch (currentNode->middleOperator.kind){
 				case NOT_TOKEN:
 					// ノードにデータが設定されている場合です。
 
@@ -1258,7 +1258,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					// 比較結果を型と演算子によって計算方法を変えて、計算します。
 					switch (currentNode->left->value.type){
 					case INTEGER:
-						switch (currentNode->operator.kind){
+						switch (currentNode->middleOperator.kind){
 						case EQUAL:
 							currentNode->value.value.boolean = currentNode->left->value.value.integer == currentNode->right->value.value.integer;
 							break;
@@ -1280,7 +1280,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						}
 						break;
 					case STRING:
-						switch (currentNode->operator.kind){
+						switch (currentNode->middleOperator.kind){
 						case EQUAL:
 							currentNode->value.value.boolean = strcmp(currentNode->left->value.value.string, currentNode->right->value.value.string) == 0;
 							break;
@@ -1317,7 +1317,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					currentNode->value.type = INTEGER;
 
 					// 比較結果を演算子によって計算方法を変えて、計算します。
-					switch (currentNode->operator.kind){
+					switch (currentNode->middleOperator.kind){
 					case PLUS:
 						currentNode->value.value.integer = currentNode->left->value.value.integer + currentNode->right->value.value.integer;
 						break;
@@ -1344,7 +1344,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					currentNode->value.type = BOOLEAN;
 
 					// 比較結果を演算子によって計算方法を変えて、計算します。
-					switch (currentNode->operator.kind){
+					switch (currentNode->middleOperator.kind){
 					case AND:
 						currentNode->value.value.boolean = currentNode->left->value.value.boolean && currentNode->right->value.value.boolean;
 						break;
