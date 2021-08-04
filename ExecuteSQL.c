@@ -1,9 +1,13 @@
 //! @file
-#include "stdafx.h"
-#include "stdio.h"
-#include "stdbool.h"
-#include "stdlib.h"
-#include "ctype.h"
+//#include "stdafx.h"
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+#include "ExecuteSQL.h"
+
 #pragma warning(disable:4996)
 
 #define MAX_FILE_LINE_LENGTH 4096          //!< 読み込むファイルの一行の最大長です。
@@ -135,6 +139,22 @@ typedef struct
 } ColumnIndex;
 
 // 以上ヘッダに相当する部分。
+
+static int min(int a, int b)
+{
+	if (a < b) {
+		return a;
+	}
+
+	return b;
+}
+
+static char *itoa(int n, char *buffer, int radix)
+{
+	sprintf(buffer, "%d", n);
+
+	return buffer;
+}
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
