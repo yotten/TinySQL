@@ -955,7 +955,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				error = ERR_MEMORY_OVER;
 				goto ERROR;
 			}
-			Data **row = inputData[i][rowNum++] = malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 入力されている一行分のデータです。
+			Data **row = inputData[i][rowNum++] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 入力されている一行分のデータです。
 			if (!row){
 				error = ERR_MEMORY_ALLOCATE;
 				goto ERROR;
@@ -976,7 +976,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				row[columnNum] = malloc(sizeof(Data));
+				row[columnNum] = (Data*)malloc(sizeof(Data));
 				if (!row[columnNum]){
 					error = ERR_MEMORY_ALLOCATE;
 					goto ERROR;
@@ -1139,7 +1139,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			error = ERR_MEMORY_OVER;
 			goto ERROR;
 		}
-		Data **row = outputData[outputRowsNum] = malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
+		Data **row = outputData[outputRowsNum] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
 		if (!row){
 			error = ERR_MEMORY_ALLOCATE;
 			goto ERROR;
@@ -1152,7 +1152,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 行の各列のデータを入力から持ってきて設定します。
 		for (int i = 0; i < selectColumnIndexesNum; ++i){
-			row[i] = malloc(sizeof(Data));
+			row[i] = (Data*)malloc(sizeof(Data));
 			if (!row[i]){
 				error = ERR_MEMORY_ALLOCATE;
 				goto ERROR;
@@ -1160,7 +1160,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			*row[i] = *(*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 		}
 
-		Data **allColumnsRow = allColumnOutputData[outputRowsNum++] = malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
+		Data **allColumnsRow = allColumnOutputData[outputRowsNum++] = (Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 		if (!allColumnsRow){
 			error = ERR_MEMORY_ALLOCATE;
 			goto ERROR;
@@ -1174,7 +1174,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		int allColumnsNum = 0; // allColumnsRowの現在の列数です。
 		for (int i = 0; i < tableNamesNum; ++i){
 			for (int j = 0; j < inputColumnNums[i]; ++j){
-				allColumnsRow[allColumnsNum] = malloc(sizeof(Data));
+				allColumnsRow[allColumnsNum] = (Data*)malloc(sizeof(Data));
 				if (!allColumnsRow[allColumnsNum]){
 					error = ERR_MEMORY_ALLOCATE;
 					goto ERROR;
