@@ -337,7 +337,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		charactorBackPoint = charactorCursol;
 		for (search = num; *search && *charactorCursol != *search; ++search){}
 		if (*search){
-			Token literal = (Token){ .kind = INT_LITERAL, .word = "" }; // 読み込んだ数値リテラルの情報です。
+			Token literal = (Token){ INT_LITERAL, "" }; // 読み込んだ数値リテラルの情報です。
 			int wordLength = 0; // 数値リテラルに現在読み込んでいる文字の数です。
 
 			// 数字が続く間、文字を読み込み続けます。
@@ -375,7 +375,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
 		if (*charactorCursol == "\'"[0]){
 			++charactorCursol;
-			Token literal = (Token){ .kind = STRING_LITERAL, .word = "\'" }; // 読み込んだ文字列リテラルの情報です。
+			Token literal = (Token){ STRING_LITERAL, "\'" }; // 読み込んだ文字列リテラルの情報です。
 			int wordLength = 1; // 文字列リテラルに現在読み込んでいる文字の数です。初期値の段階で最初のシングルクォートは読み込んでいます。
 
 			// 次のシングルクォートがくるまで文字を読み込み続けます。
@@ -431,7 +431,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				tokens[tokensNum++] = (Token){ .kind = condition.kind, .word = "" };
+				tokens[tokensNum++] = (Token){ condition.kind, "" };
 				found = true;
 			}
 			else{
@@ -460,7 +460,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				tokens[tokensNum++] = (Token){ .kind = condition.kind, .word = "" };
+				tokens[tokensNum++] = (Token){ condition.kind, "" };
 				found = true;
 			}
 			else{
@@ -476,7 +476,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// 識別子の最初の文字を確認します。
 		for (search = alpahUnder; *search && *charactorCursol != *search; ++search){};
 		if (*search){
-			Token identifier = (Token){ .kind = IDENTIFIER, .word = "" }; // 読み込んだ識別子の情報です。
+			Token identifier = (Token){ IDENTIFIER, "" }; // 読み込んだ識別子の情報です。
 			int wordLength = 0; // 識別子に現在読み込んでいる文字の数です。
 			do {
 				// 二文字目以降は数字も許可して文字の種類を確認します。
@@ -518,7 +518,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	// selectColumnsを初期化します。
 	for (size_t i = 0; i < sizeof(selectColumns) / sizeof(selectColumns[0]); i++)
 	{
-		selectColumns[i] = (Column){ .tableName = "", .columnName = "" };
+		selectColumns[i] = (Column){ "", "" };
 	}
 	int selectColumnsNum = 0; // SELECT句から現在読み込まれた列名の数です。
 
@@ -526,27 +526,27 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	// orderByColumnsを初期化します。
 	for (size_t i = 0; i < sizeof(orderByColumns) / sizeof(orderByColumns[0]); i++)
 	{
-		orderByColumns[i] = (Column){ .tableName = "", .columnName = "" };
+		orderByColumns[i] = (Column){ "", "" };
 	}
 	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
 
-	enum TOKEN_KIND orders[MAX_COLUMN_COUNT] = { 0 }; // 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
+	enum TOKEN_KIND orders[MAX_COLUMN_COUNT] = { NOT_TOKEN }; // 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
 
 	ExtensionTreeNode whereExtensionNodes[MAX_EXTENSION_TREE_NODE_COUNT]; // WHEREに指定された木のノードを、木構造とは無関係に格納します。
 	// whereExtensionNodesを初期化します。
 	for (size_t i = 0; i < sizeof(whereExtensionNodes) / sizeof(whereExtensionNodes[0]); i++)
 	{
 		whereExtensionNodes[i] = (ExtensionTreeNode){
-			.parent = NULL,
-			.left = NULL,
-			.operator ={ NOT_TOKEN, 0 },
-			.right = NULL,
-			.inParen = false,
-			.parenOpenBeforeClose = 0,
-			.signCoefficient = 1,
-			.column = { .tableName = "", .columnName = "" },
-			.calculated = false,
-			.value = { .type = STRING, .value = { .string = "" } },
+			NULL,
+			NULL,
+			{ NOT_TOKEN, 0 },
+			NULL,
+			false,
+			0,
+			1,
+			{ "", "" },
+			false,
+			{ STRING, { "" } },
 		};
 	}
 	int whereExtensionNodesNum = 0; // 現在読み込まれているのwhereExtensionNodesの数です。
@@ -757,7 +757,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					++tokenCursol;
 				}
 				else if (tokenCursol->kind == STRING_LITERAL){
-					currentNode->value = (Data){ .type = STRING, .value = { .string = "" } };
+					currentNode->value = (Data){ STRING, { "" } };
 
 					// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
 					strncpy(currentNode->value.value.string, tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
@@ -898,7 +898,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	{
 		for (size_t j = 0; j < sizeof(inputColumns[0]) / sizeof(inputColumns[0][0]); j++)
 		{
-			inputColumns[i][j] = (Column){ .tableName = "", .columnName = "" };
+			inputColumns[i][j] = (Column){ "", "" };
 		}
 	}
 	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
@@ -981,7 +981,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					error = ERR_MEMORY_ALLOCATE;
 					goto ERROR;
 				}
-				*row[columnNum] = (Data){ .type = STRING, .value = { .string = "" } };
+				*row[columnNum] = (Data){ STRING, { "" } };
 				char *writeCursol = row[columnNum++]->value.string; // データ文字列の書き込みに利用するカーソルです。
 
 				// データ文字列を一つ読みます。
@@ -1041,7 +1041,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	// allInputColumnsを初期化します。
 	for (size_t i = 0; i < sizeof(allInputColumns) / sizeof(allInputColumns[0]); i++)
 	{
-		allInputColumns[i] = (Column){ .tableName = "", .columnName = "" };
+		allInputColumns[i] = (Column){ "", "" };
 	}
 	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
 
