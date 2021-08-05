@@ -1,10 +1,10 @@
 //! @file
 //#include "stdafx.h"
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdbool>
+#include <cstdlib>
 #include <ctype.h>
-#include <string.h>
+#include <cstring>
 
 #include "ExecuteSQL.h"
 
