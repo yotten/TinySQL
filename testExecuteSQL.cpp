@@ -5,9 +5,7 @@
 #include <iterator>
 #include <gtest/gtest.h>
 
-extern "C" {
 #include "ExecuteSQL.h"
-}
 
 //! ExecuteSQLの戻り値の種類を表します。
 enum REAULT_VALUE
