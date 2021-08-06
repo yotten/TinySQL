@@ -320,6 +320,21 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		strncpy(tableNames[i], "", MAX_WORD_LENGTH);
 	}
 	int tableNamesNum = 0; // 現在読み込まれているテーブル名の数です。
+	int selectColumnsNum = 0; // SELECT句から現在読み込まれた列名の数です。
+	enum TOKEN_KIND orders[MAX_COLUMN_COUNT] = { NOT_TOKEN }; // 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
+	int outputRowsNum = 0; // 出力データの現在の行数です。
+	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
+	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
+	Data ***currentRows[MAX_TABLE_COUNT] = { NULL }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
+	int whereExtensionNodesNum = 0; // 現在読み込まれているのwhereExtensionNodesの数です。
+	ExtensionTreeNode *whereTopNode = NULL; // 式木の根となるノードです。
+	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
+	int outputColumnNum = 0; // 出力するすべての行の現在の数です。
+	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
+	int selectColumnIndexesNum = 0; // selectColumnIndexesの現在の数。
+	Token *tokenCursol = tokens; // 現在見ているトークンを指します。
+	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
+	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
 
 	// SQLをトークンに分割て読み込みます。
 	while (*charactorCursol){
@@ -512,15 +527,12 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 	// トークン列を解析し、構文を読み取ります。
 
-	Token *tokenCursol = tokens; // 現在見ているトークンを指します。
-
 	Column selectColumns[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // SELECT句に指定された列名です。
 	// selectColumnsを初期化します。
 	for (size_t i = 0; i < sizeof(selectColumns) / sizeof(selectColumns[0]); i++)
 	{
 		selectColumns[i] = (Column){ "", "" };
 	}
-	int selectColumnsNum = 0; // SELECT句から現在読み込まれた列名の数です。
 
 	Column orderByColumns[MAX_COLUMN_COUNT]; // ORDER句に指定された列名です。
 	// orderByColumnsを初期化します。
@@ -528,9 +540,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	{
 		orderByColumns[i] = (Column){ "", "" };
 	}
-	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
-
-	enum TOKEN_KIND orders[MAX_COLUMN_COUNT] = { NOT_TOKEN }; // 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
 
 	ExtensionTreeNode whereExtensionNodes[MAX_EXTENSION_TREE_NODE_COUNT]; // WHEREに指定された木のノードを、木構造とは無関係に格納します。
 	// whereExtensionNodesを初期化します。
@@ -549,9 +558,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			{ STRING, { "" } },
 		};
 	}
-	int whereExtensionNodesNum = 0; // 現在読み込まれているのwhereExtensionNodesの数です。
-
-	ExtensionTreeNode *whereTopNode = NULL; // 式木の根となるノードです。
 
 	// SQLの構文を解析し、必要な情報を取得します。
 
@@ -608,8 +614,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	}
 
 	// ORDER句とWHERE句を読み込みます。最大各一回ずつ書くことができます。
-	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
-	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
 	while (tokenCursol->kind == ORDER || tokenCursol->kind == WHERE){
 
 		// 二度目のORDER句はエラーです。
@@ -867,7 +871,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		error = ERR_SQL_SYNTAX;
 		goto ERROR;
 	}
-	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
+
 	while (tokenCursol->kind == COMMA || first){
 		if (tokenCursol->kind == COMMA){
 			++tokenCursol;
@@ -901,7 +905,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			inputColumns[i][j] = (Column){ "", "" };
 		}
 	}
-	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
 
 	for (int i = 0; i < tableNamesNum; ++i){
 
@@ -1043,7 +1046,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	{
 		allInputColumns[i] = (Column){ "", "" };
 	}
-	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
 
 	// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 	for (int i = 0; i < tableNamesNum; ++i){
@@ -1062,11 +1064,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	}
 
 	Column outputColumns[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // 出力するすべての行の情報です。
-	int outputColumnNum = 0; // 出力するすべての行の現在の数です。
 
 	// SELECT句で指定された列名が、何個目の入力ファイルの何列目に相当するかを判別します。
 	ColumnIndex selectColumnIndexes[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // SELECT句で指定された列の、入力ファイルとしてのインデックスです。
-	int selectColumnIndexesNum = 0; // selectColumnIndexesの現在の数。
 	for (int i = 0; i < selectColumnsNum; ++i){
 		found = false;
 		for (int j = 0; j < tableNamesNum; ++j){
@@ -1125,9 +1125,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 	}
 
-	int outputRowsNum = 0; // 出力データの現在の行数です。
-
-	Data ***currentRows[MAX_TABLE_COUNT] = { NULL }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	for (int i = 0; i < tableNamesNum; ++i){
 		// 各テーブルの先頭行を設定します。
 		currentRows[i] = inputData[i];
