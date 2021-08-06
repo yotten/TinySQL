@@ -1,10 +1,10 @@
 //! @file
 //#include "stdafx.h"
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdbool>
+#include <cstdlib>
 #include <ctype.h>
-#include <string.h>
+#include <cstring>
 
 #include "ExecuteSQL.h"
 
@@ -121,7 +121,7 @@ typedef struct _extension_tree_node
 {
 	struct _extension_tree_node *parent; //!< 親となるノードです。根の式木の場合はNULLとなります。
 	struct _extension_tree_node *left;   //!< 左の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
-	Operator operator;                   //!< 中置される演算子です。自身が末端のとなる式木の場合の種類はNOT_TOKENとなります。
+	Operator middleOperator;             //!< 中置される演算子です。自身が末端のとなる式木の場合の種類はNOT_TOKENとなります。
 	struct _extension_tree_node *right;  //!< 右の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
 	bool inParen;                        //!< 自身がかっこにくるまれているかどうかです。
 	int parenOpenBeforeClose;            //!< 木の構築中に0以外となり、自身の左にあり、まだ閉じてないカッコの開始の数となります。
@@ -320,6 +320,21 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		strncpy(tableNames[i], "", MAX_WORD_LENGTH);
 	}
 	int tableNamesNum = 0; // 現在読み込まれているテーブル名の数です。
+	int selectColumnsNum = 0; // SELECT句から現在読み込まれた列名の数です。
+	enum TOKEN_KIND orders[MAX_COLUMN_COUNT] = { NOT_TOKEN }; // 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
+	int outputRowsNum = 0; // 出力データの現在の行数です。
+	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
+	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
+	Data ***currentRows[MAX_TABLE_COUNT] = { NULL }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
+	int whereExtensionNodesNum = 0; // 現在読み込まれているのwhereExtensionNodesの数です。
+	ExtensionTreeNode *whereTopNode = NULL; // 式木の根となるノードです。
+	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
+	int outputColumnNum = 0; // 出力するすべての行の現在の数です。
+	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
+	int selectColumnIndexesNum = 0; // selectColumnIndexesの現在の数。
+	Token *tokenCursol = tokens; // 現在見ているトークンを指します。
+	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
+	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
 
 	// SQLをトークンに分割て読み込みます。
 	while (*charactorCursol){
@@ -337,7 +352,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		charactorBackPoint = charactorCursol;
 		for (search = num; *search && *charactorCursol != *search; ++search){}
 		if (*search){
-			Token literal = (Token){ .kind = INT_LITERAL, .word = "" }; // 読み込んだ数値リテラルの情報です。
+			Token literal = (Token){ INT_LITERAL, "" }; // 読み込んだ数値リテラルの情報です。
 			int wordLength = 0; // 数値リテラルに現在読み込んでいる文字の数です。
 
 			// 数字が続く間、文字を読み込み続けます。
@@ -375,7 +390,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
 		if (*charactorCursol == "\'"[0]){
 			++charactorCursol;
-			Token literal = (Token){ .kind = STRING_LITERAL, .word = "\'" }; // 読み込んだ文字列リテラルの情報です。
+			Token literal = (Token){ STRING_LITERAL, "\'" }; // 読み込んだ文字列リテラルの情報です。
 			int wordLength = 1; // 文字列リテラルに現在読み込んでいる文字の数です。初期値の段階で最初のシングルクォートは読み込んでいます。
 
 			// 次のシングルクォートがくるまで文字を読み込み続けます。
@@ -431,7 +446,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				tokens[tokensNum++] = (Token){ .kind = condition.kind, .word = "" };
+				tokens[tokensNum++] = (Token){ condition.kind, "" };
 				found = true;
 			}
 			else{
@@ -460,7 +475,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				tokens[tokensNum++] = (Token){ .kind = condition.kind, .word = "" };
+				tokens[tokensNum++] = (Token){ condition.kind, "" };
 				found = true;
 			}
 			else{
@@ -476,7 +491,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// 識別子の最初の文字を確認します。
 		for (search = alpahUnder; *search && *charactorCursol != *search; ++search){};
 		if (*search){
-			Token identifier = (Token){ .kind = IDENTIFIER, .word = "" }; // 読み込んだ識別子の情報です。
+			Token identifier = (Token){ IDENTIFIER, "" }; // 読み込んだ識別子の情報です。
 			int wordLength = 0; // 識別子に現在読み込んでいる文字の数です。
 			do {
 				// 二文字目以降は数字も許可して文字の種類を確認します。
@@ -512,46 +527,37 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 	// トークン列を解析し、構文を読み取ります。
 
-	Token *tokenCursol = tokens; // 現在見ているトークンを指します。
-
 	Column selectColumns[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // SELECT句に指定された列名です。
 	// selectColumnsを初期化します。
 	for (size_t i = 0; i < sizeof(selectColumns) / sizeof(selectColumns[0]); i++)
 	{
-		selectColumns[i] = (Column){ .tableName = "", .columnName = "" };
+		selectColumns[i] = (Column){ "", "" };
 	}
-	int selectColumnsNum = 0; // SELECT句から現在読み込まれた列名の数です。
 
 	Column orderByColumns[MAX_COLUMN_COUNT]; // ORDER句に指定された列名です。
 	// orderByColumnsを初期化します。
 	for (size_t i = 0; i < sizeof(orderByColumns) / sizeof(orderByColumns[0]); i++)
 	{
-		orderByColumns[i] = (Column){ .tableName = "", .columnName = "" };
+		orderByColumns[i] = (Column){ "", "" };
 	}
-	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
-
-	enum TOKEN_KIND orders[MAX_COLUMN_COUNT] = { 0 }; // 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
 
 	ExtensionTreeNode whereExtensionNodes[MAX_EXTENSION_TREE_NODE_COUNT]; // WHEREに指定された木のノードを、木構造とは無関係に格納します。
 	// whereExtensionNodesを初期化します。
 	for (size_t i = 0; i < sizeof(whereExtensionNodes) / sizeof(whereExtensionNodes[0]); i++)
 	{
 		whereExtensionNodes[i] = (ExtensionTreeNode){
-			.parent = NULL,
-			.left = NULL,
-			.operator ={ NOT_TOKEN, 0 },
-			.right = NULL,
-			.inParen = false,
-			.parenOpenBeforeClose = 0,
-			.signCoefficient = 1,
-			.column = { .tableName = "", .columnName = "" },
-			.calculated = false,
-			.value = { .type = STRING, .value = { .string = "" } },
+			NULL,
+			NULL,
+			{ NOT_TOKEN, 0 },
+			NULL,
+			false,
+			0,
+			1,
+			{ "", "" },
+			false,
+			{ STRING, { "" } },
 		};
 	}
-	int whereExtensionNodesNum = 0; // 現在読み込まれているのwhereExtensionNodesの数です。
-
-	ExtensionTreeNode *whereTopNode = NULL; // 式木の根となるノードです。
 
 	// SQLの構文を解析し、必要な情報を取得します。
 
@@ -608,8 +614,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	}
 
 	// ORDER句とWHERE句を読み込みます。最大各一回ずつ書くことができます。
-	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
-	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
 	while (tokenCursol->kind == ORDER || tokenCursol->kind == WHERE){
 
 		// 二度目のORDER句はエラーです。
@@ -757,7 +761,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					++tokenCursol;
 				}
 				else if (tokenCursol->kind == STRING_LITERAL){
-					currentNode->value = (Data){ .type = STRING, .value = { .string = "" } };
+					currentNode->value = (Data){ STRING, { "" } };
 
 					// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
 					strncpy(currentNode->value.value.string, tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
@@ -795,13 +799,13 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 
 				// 演算子(オペレーターを読み込みます。
-				Operator operator =(Operator){ .kind = NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
+				Operator middleOperator =(Operator){ .kind = NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
 
 				// 現在見ている演算子の情報を探します。
 				found = false;
 				for (int j = 0; j < sizeof(operators) / sizeof(operators[0]); ++j){
 					if (operators[j].kind == tokenCursol->kind){
-						operator = operators[j];
+						middleOperator = operators[j];
 						found = true;
 						break;
 					}
@@ -825,7 +829,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 							searched = searched->left;
 						}
 						first = false;
-					} while (!searched && tmp->parent && (tmp->parent->operator.order <= operator.order || tmp->parent->inParen));
+					} while (!searched && tmp->parent && (tmp->parent->middleOperator.order <= middleOperator.order || tmp->parent->inParen));
 
 					// 演算子のノードを新しく生成します。
 					if (MAX_EXTENSION_TREE_NODE_COUNT <= whereExtensionNodesNum){
@@ -833,7 +837,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						goto ERROR;
 					}
 					currentNode = &whereExtensionNodes[whereExtensionNodesNum++];
-					currentNode->operator = operator;
+					currentNode->middleOperator = middleOperator;
 
 					// 見つかった場所に新しいノードを配置します。これまでその位置にあったノードは左の子となるよう、親ノードと子ノードのポインタをつけかえます。
 					currentNode->parent = tmp->parent;
@@ -867,7 +871,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		error = ERR_SQL_SYNTAX;
 		goto ERROR;
 	}
-	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
+
 	while (tokenCursol->kind == COMMA || first){
 		if (tokenCursol->kind == COMMA){
 			++tokenCursol;
@@ -898,10 +902,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	{
 		for (size_t j = 0; j < sizeof(inputColumns[0]) / sizeof(inputColumns[0][0]); j++)
 		{
-			inputColumns[i][j] = (Column){ .tableName = "", .columnName = "" };
+			inputColumns[i][j] = (Column){ "", "" };
 		}
 	}
-	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
 
 	for (int i = 0; i < tableNamesNum; ++i){
 
@@ -955,7 +958,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				error = ERR_MEMORY_OVER;
 				goto ERROR;
 			}
-			Data **row = inputData[i][rowNum++] = malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 入力されている一行分のデータです。
+			Data **row = inputData[i][rowNum++] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 入力されている一行分のデータです。
 			if (!row){
 				error = ERR_MEMORY_ALLOCATE;
 				goto ERROR;
@@ -976,12 +979,12 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				row[columnNum] = malloc(sizeof(Data));
+				row[columnNum] = (Data*)malloc(sizeof(Data));
 				if (!row[columnNum]){
 					error = ERR_MEMORY_ALLOCATE;
 					goto ERROR;
 				}
-				*row[columnNum] = (Data){ .type = STRING, .value = { .string = "" } };
+				*row[columnNum] = (Data){ STRING, { "" } };
 				char *writeCursol = row[columnNum++]->value.string; // データ文字列の書き込みに利用するカーソルです。
 
 				// データ文字列を一つ読みます。
@@ -1041,9 +1044,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	// allInputColumnsを初期化します。
 	for (size_t i = 0; i < sizeof(allInputColumns) / sizeof(allInputColumns[0]); i++)
 	{
-		allInputColumns[i] = (Column){ .tableName = "", .columnName = "" };
+		allInputColumns[i] = (Column){ "", "" };
 	}
-	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
 
 	// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 	for (int i = 0; i < tableNamesNum; ++i){
@@ -1062,11 +1064,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	}
 
 	Column outputColumns[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // 出力するすべての行の情報です。
-	int outputColumnNum = 0; // 出力するすべての行の現在の数です。
 
 	// SELECT句で指定された列名が、何個目の入力ファイルの何列目に相当するかを判別します。
 	ColumnIndex selectColumnIndexes[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // SELECT句で指定された列の、入力ファイルとしてのインデックスです。
-	int selectColumnIndexesNum = 0; // selectColumnIndexesの現在の数。
 	for (int i = 0; i < selectColumnsNum; ++i){
 		found = false;
 		for (int j = 0; j < tableNamesNum; ++j){
@@ -1117,7 +1117,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	if (whereTopNode){
 		// 既存数値の符号を計算します。
 		for (int i = 0; i < whereExtensionNodesNum; ++i){
-			if (whereExtensionNodes[i].operator.kind == NOT_TOKEN &&
+			if (whereExtensionNodes[i].middleOperator.kind == NOT_TOKEN &&
 				!*whereExtensionNodes[i].column.columnName &&
 				whereExtensionNodes[i].value.type == INTEGER){
 				whereExtensionNodes[i].value.value.integer *= whereExtensionNodes[i].signCoefficient;
@@ -1125,9 +1125,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 	}
 
-	int outputRowsNum = 0; // 出力データの現在の行数です。
-
-	Data ***currentRows[MAX_TABLE_COUNT] = { NULL }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	for (int i = 0; i < tableNamesNum; ++i){
 		// 各テーブルの先頭行を設定します。
 		currentRows[i] = inputData[i];
@@ -1139,7 +1136,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			error = ERR_MEMORY_OVER;
 			goto ERROR;
 		}
-		Data **row = outputData[outputRowsNum] = malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
+		Data **row = outputData[outputRowsNum] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
 		if (!row){
 			error = ERR_MEMORY_ALLOCATE;
 			goto ERROR;
@@ -1152,7 +1149,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 行の各列のデータを入力から持ってきて設定します。
 		for (int i = 0; i < selectColumnIndexesNum; ++i){
-			row[i] = malloc(sizeof(Data));
+			row[i] = (Data*)malloc(sizeof(Data));
 			if (!row[i]){
 				error = ERR_MEMORY_ALLOCATE;
 				goto ERROR;
@@ -1160,7 +1157,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			*row[i] = *(*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 		}
 
-		Data **allColumnsRow = allColumnOutputData[outputRowsNum++] = malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
+		Data **allColumnsRow = allColumnOutputData[outputRowsNum++] = (Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 		if (!allColumnsRow){
 			error = ERR_MEMORY_ALLOCATE;
 			goto ERROR;
@@ -1174,7 +1171,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		int allColumnsNum = 0; // allColumnsRowの現在の列数です。
 		for (int i = 0; i < tableNamesNum; ++i){
 			for (int j = 0; j < inputColumnNums[i]; ++j){
-				allColumnsRow[allColumnsNum] = malloc(sizeof(Data));
+				allColumnsRow[allColumnsNum] = (Data*)malloc(sizeof(Data));
 				if (!allColumnsRow[allColumnsNum]){
 					error = ERR_MEMORY_ALLOCATE;
 					goto ERROR;
@@ -1197,7 +1194,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				}
 
 				// 自ノードの値を計算します。
-				switch (currentNode->operator.kind){
+				switch (currentNode->middleOperator.kind){
 				case NOT_TOKEN:
 					// ノードにデータが設定されている場合です。
 
@@ -1258,7 +1255,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					// 比較結果を型と演算子によって計算方法を変えて、計算します。
 					switch (currentNode->left->value.type){
 					case INTEGER:
-						switch (currentNode->operator.kind){
+						switch (currentNode->middleOperator.kind){
 						case EQUAL:
 							currentNode->value.value.boolean = currentNode->left->value.value.integer == currentNode->right->value.value.integer;
 							break;
@@ -1280,7 +1277,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						}
 						break;
 					case STRING:
-						switch (currentNode->operator.kind){
+						switch (currentNode->middleOperator.kind){
 						case EQUAL:
 							currentNode->value.value.boolean = strcmp(currentNode->left->value.value.string, currentNode->right->value.value.string) == 0;
 							break;
@@ -1317,7 +1314,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					currentNode->value.type = INTEGER;
 
 					// 比較結果を演算子によって計算方法を変えて、計算します。
-					switch (currentNode->operator.kind){
+					switch (currentNode->middleOperator.kind){
 					case PLUS:
 						currentNode->value.value.integer = currentNode->left->value.value.integer + currentNode->right->value.value.integer;
 						break;
@@ -1344,7 +1341,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					currentNode->value.type = BOOLEAN;
 
 					// 比較結果を演算子によって計算方法を変えて、計算します。
-					switch (currentNode->operator.kind){
+					switch (currentNode->middleOperator.kind){
 					case AND:
 						currentNode->value.value.boolean = currentNode->left->value.value.boolean && currentNode->right->value.value.boolean;
 						break;
