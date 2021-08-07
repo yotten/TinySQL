@@ -1,12 +1,14 @@
 //! @file
 #include "data.hpp"
+#include "operator.hpp"
+
 #include <cstdio>
 #include <cstdbool>
 #include <cstdlib>
 #include <ctype.h>
 #include <cstring>
 
-#include "ExecuteSQL.h"
+#include "ExecuteSQL.hpp"
 
 #pragma warning(disable:4996)
 
@@ -37,45 +39,6 @@ enum class ResultValue : int {
 	ERR_CSV_SYNTAX = 8,         //!< CSVの構文解析が失敗しました。
 	ERR_MEMORY_ALLOCATE = 9,    //!< メモリの取得に失敗しました。
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
-};
-
-//! トークンの種類を表します。
-enum class TokenKind
-{
-	NOT_TOKEN,              //!< トークンを表しません。
-	ASC,                    //!< ASCキーワードです。
-	AND,                    //!< ANDキーワードです。
-	BY,                     //!< BYキーワードです。
-	DESC,                   //!< DESCキーワードです。
-	FROM,                   //!< FROMキーワードです。
-	OR,                     //!< ORキーワードです。
-	ORDER,                  //!< ORDERキーワードです。
-	SELECT,                 //!< SELECTキーワードです。
-	WHERE,                  //!< WHEREキーワードです。
-	ASTERISK,               //!< ＊ 記号です。
-	COMMA,                  //!< ， 記号です。
-	CLOSE_PAREN,            //!< ） 記号です。
-	DOT,                    //!< ． 記号です。
-	EQUAL,                  //!< ＝ 記号です。
-	GREATER_THAN,           //!< ＞ 記号です。
-	GREATER_THAN_OR_EQUAL,  //!< ＞＝ 記号です。
-	LESS_THAN,              //!< ＜ 記号です。
-	LESS_THAN_OR_EQUAL,     //!< ＜＝ 記号です。
-	MINUS,                  //!< － 記号です。
-	NOT_EQUAL,              //!< ＜＞ 記号です。
-	OPEN_PAREN,             //!< （ 記号です。
-	PLUS,                   //!< ＋ 記号です。
-	SLASH,                  //!< ／ 記号です。
-	IDENTIFIER,             //!< 識別子です。
-	INT_LITERAL,            //!< 整数リテラルです。
-	STRING_LITERAL          //!< 文字列リテラルです。
-};
-
-//! WHERE句に指定する演算子の情報を表します。
-class Operator {
-public:
-	TokenKind kind; //!< 演算子の種類を、演算子を記述するトークンの種類で表します。
-	int order; //!< 演算子の優先順位です。
 };
 
 //! トークンを表します。

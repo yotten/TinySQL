@@ -6,7 +6,7 @@ test: testExecuteSQL.o ExecuteSQL.o
 	./testExecuteSQL
 
 #testExecuteSQL.o: testExecuteSQL.cpp
-testExecuteSQL.o: testExecuteSQL.cpp data.hpp 
+testExecuteSQL.o: testExecuteSQL.cpp data.hpp operator.hpp 
 	g++ -c testExecuteSQL.cpp
 
 ExecuteSQL.o: ExecuteSQL.cpp
