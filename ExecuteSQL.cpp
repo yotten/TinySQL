@@ -1,5 +1,5 @@
 //! @file
-//#include "stdafx.h"
+#include "data.hpp"
 #include <cstdio>
 #include <cstdbool>
 #include <cstdlib>
@@ -12,7 +12,6 @@
 
 #define MAX_FILE_LINE_LENGTH 4096          //!< 読み込むファイルの一行の最大長です。
 #define MAX_WORD_LENGTH 256                //!< SQLの一語の最大長です。
-#define MAX_DATA_LENGTH 256                //!< 入出力されるデータの、各列の最大長です。
 #define MAX_TOKEN_COUNT 255                //!< SQLに含まれるトークンの最大値です。
 #define MAX_COLUMN_COUNT 16                //!< 入出力されるデータに含まれる列の最大数です。
 #define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
@@ -38,14 +37,6 @@ enum class ResultValue : int {
 	ERR_CSV_SYNTAX = 8,         //!< CSVの構文解析が失敗しました。
 	ERR_MEMORY_ALLOCATE = 9,    //!< メモリの取得に失敗しました。
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
-};
-
-//! 入力や出力、経過の計算に利用するデータのデータ型の種類を表します。
-enum class DataType
-{
-	STRING,   //!< 文字列型です。
-	INTEGER,  //!< 整数型です。
-	BOOLEAN   //!< 真偽値型です。
 };
 
 //! トークンの種類を表します。
@@ -78,20 +69,6 @@ enum class TokenKind
 	IDENTIFIER,             //!< 識別子です。
 	INT_LITERAL,            //!< 整数リテラルです。
 	STRING_LITERAL          //!< 文字列リテラルです。
-};
-
-//! 一つの値を持つデータです。
-class Data {
-public:
-	DataType type; //!< データの型です。
-
-	//! 実際のデータを格納する共用体です。
-	union
-	{
-		char string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
-		int integer;                  //!< データが整数型の場合の値です。
-		bool boolean;                 //!< データが真偽値型の場合の値です。
-	} value;
 };
 
 //! WHERE句に指定する演算子の情報を表します。
