@@ -41,7 +41,7 @@ enum class ResultValue : int {
 };
 
 //! 入力や出力、経過の計算に利用するデータのデータ型の種類を表します。
-enum DATA_TYPE
+enum class DataType
 {
 	STRING,   //!< 文字列型です。
 	INTEGER,  //!< 整数型です。
@@ -83,7 +83,7 @@ enum TOKEN_KIND
 //! 一つの値を持つデータです。
 typedef struct
 {
-	enum DATA_TYPE type; //!< データの型です。
+	DataType type; //!< データの型です。
 
 	//! 実際のデータを格納する共用体です。
 	union
@@ -554,7 +554,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			1,
 			{ "", "" },
 			false,
-			{ STRING, { "" } },
+			{ DataType::STRING, { "" } },
 		};
 	}
 
@@ -756,11 +756,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					}
 				}
 				else if (tokenCursol->kind == INT_LITERAL){
-					currentNode->value = (Data){ .type = INTEGER, .value = { .integer = atoi(tokenCursol->word) } };
+					currentNode->value = (Data){ .type = DataType::INTEGER, .value = { .integer = atoi(tokenCursol->word) } };
 					++tokenCursol;
 				}
 				else if (tokenCursol->kind == STRING_LITERAL){
-					currentNode->value = (Data){ STRING, { "" } };
+					currentNode->value = (Data){ DataType::STRING, { "" } };
 
 					// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
 					strncpy(currentNode->value.value.string, tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
@@ -983,7 +983,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					error = ResultValue::ERR_MEMORY_ALLOCATE;
 					goto ERROR;
 				}
-				*row[columnNum] = (Data){ STRING, { "" } };
+				*row[columnNum] = (Data){ DataType::STRING, { "" } };
 				char *writeCursol = row[columnNum++]->value.string; // データ文字列の書き込みに利用するカーソルです。
 
 				// データ文字列を一つ読みます。
@@ -1032,7 +1032,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			if (!found){
 				currentRow = inputData[i];
 				while (*currentRow){
-					*(*currentRow)[j] = (Data){ .type = INTEGER, .value = { .integer = atoi((*currentRow)[j]->value.string) } };
+					*(*currentRow)[j] = (Data){ .type = DataType::INTEGER, .value = { .integer = atoi((*currentRow)[j]->value.string) } };
 					++currentRow;
 				}
 			}
@@ -1118,7 +1118,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		for (int i = 0; i < whereExtensionNodesNum; ++i){
 			if (whereExtensionNodes[i].middleOperator.kind == NOT_TOKEN &&
 				!*whereExtensionNodes[i].column.columnName &&
-				whereExtensionNodes[i].value.type == INTEGER){
+				whereExtensionNodes[i].value.type == DataType::INTEGER){
 				whereExtensionNodes[i].value.value.integer *= whereExtensionNodes[i].signCoefficient;
 			}
 		}
@@ -1230,7 +1230,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						}
 						;
 						// 符号を考慮して値を計算します。
-						if (currentNode->value.type == INTEGER){
+						if (currentNode->value.type == DataType::INTEGER){
 							currentNode->value.value.integer *= currentNode->signCoefficient;
 						}
 					}
@@ -1244,16 +1244,16 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					// 比較演算子の場合です。
 
 					// 比較できるのは文字列型か整数型で、かつ左右の型が同じ場合です。
-					if (currentNode->left->value.type != INTEGER && currentNode->left->value.type != STRING ||
+					if (currentNode->left->value.type != DataType::INTEGER && currentNode->left->value.type != DataType::STRING ||
 						currentNode->left->value.type != currentNode->right->value.type){
 						error = ResultValue::ERR_WHERE_OPERAND_TYPE;
 						goto ERROR;
 					}
-					currentNode->value.type = BOOLEAN;
+					currentNode->value.type = DataType::BOOLEAN;
 
 					// 比較結果を型と演算子によって計算方法を変えて、計算します。
 					switch (currentNode->left->value.type){
-					case INTEGER:
+					case DataType::INTEGER:
 						switch (currentNode->middleOperator.kind){
 						case EQUAL:
 							currentNode->value.value.boolean = currentNode->left->value.value.integer == currentNode->right->value.value.integer;
@@ -1275,7 +1275,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 							break;
 						}
 						break;
-					case STRING:
+					case DataType::STRING:
 						switch (currentNode->middleOperator.kind){
 						case EQUAL:
 							currentNode->value.value.boolean = strcmp(currentNode->left->value.value.string, currentNode->right->value.value.string) == 0;
@@ -1306,11 +1306,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					// 四則演算の場合です。
 
 					// 演算できるのは整数型同士の場合のみです。
-					if (currentNode->left->value.type != INTEGER || currentNode->right->value.type != INTEGER){
+					if (currentNode->left->value.type != DataType::INTEGER || currentNode->right->value.type != DataType::INTEGER){
 						error = ResultValue::ERR_WHERE_OPERAND_TYPE;
 						goto ERROR;
 					}
-					currentNode->value.type = INTEGER;
+					currentNode->value.type = DataType::INTEGER;
 
 					// 比較結果を演算子によって計算方法を変えて、計算します。
 					switch (currentNode->middleOperator.kind){
@@ -1333,11 +1333,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					// 論理演算の場合です。
 
 					// 演算できるのは真偽値型同士の場合のみです。
-					if (currentNode->left->value.type != BOOLEAN || currentNode->right->value.type != BOOLEAN){
+					if (currentNode->left->value.type != DataType::BOOLEAN || currentNode->right->value.type != DataType::BOOLEAN){
 						error = ResultValue::ERR_WHERE_OPERAND_TYPE;
 						goto ERROR;
 					}
-					currentNode->value.type = BOOLEAN;
+					currentNode->value.type = DataType::BOOLEAN;
 
 					// 比較結果を演算子によって計算方法を変えて、計算します。
 					switch (currentNode->middleOperator.kind){
@@ -1439,10 +1439,10 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					int cmp = 0; // 比較結果です。等しければ0、インデックスjの行が大きければプラス、インデックスminIndexの行が大きければマイナスとなります。
 					switch (mData->type)
 					{
-					case INTEGER:
+					case DataType::INTEGER:
 						cmp = jData->value.integer - mData->value.integer;
 						break;
-					case STRING:
+					case DataType::STRING:
 						cmp = strcmp(jData->value.string, mData->value.string);
 						break;
 					}
@@ -1510,10 +1510,10 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		for (int i = 0; i < selectColumnsNum; ++i){
 			char outputString[MAX_DATA_LENGTH] = "";
 			switch ((*column)->type){
-			case INTEGER:
+			case DataType::INTEGER:
 				itoa((*column)->value.integer, outputString, 10);
 				break;
-			case STRING:
+			case DataType::STRING:
 				strcpy(outputString, (*column)->value.string);
 				break;
 			}
