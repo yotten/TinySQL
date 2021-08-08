@@ -1,4 +1,4 @@
-CFLAGS=-std=c++14
+CFLAGS=-std=c++14 -Wall
 LDFLAGS=-pthread -lgtest_main -lgtest
 
 test: testExecuteSQL.o ExecuteSQL.o
