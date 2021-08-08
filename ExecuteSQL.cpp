@@ -1,18 +1,21 @@
 //! @file
-//#include "stdafx.h"
+#include "data.hpp"
+#include "operator.hpp"
+#include "token.hpp"
+#include "extension_tree_node.hpp"
+#include "column_index.hpp"
+
 #include <cstdio>
 #include <cstdbool>
 #include <cstdlib>
 #include <ctype.h>
 #include <cstring>
 
-#include "ExecuteSQL.h"
+#include "ExecuteSQL.hpp"
 
 #pragma warning(disable:4996)
 
 #define MAX_FILE_LINE_LENGTH 4096          //!< 読み込むファイルの一行の最大長です。
-#define MAX_WORD_LENGTH 256                //!< SQLの一語の最大長です。
-#define MAX_DATA_LENGTH 256                //!< 入出力されるデータの、各列の最大長です。
 #define MAX_TOKEN_COUNT 255                //!< SQLに含まれるトークンの最大値です。
 #define MAX_COLUMN_COUNT 16                //!< 入出力されるデータに含まれる列の最大数です。
 #define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
@@ -39,103 +42,6 @@ enum class ResultValue : int {
 	ERR_MEMORY_ALLOCATE = 9,    //!< メモリの取得に失敗しました。
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
 };
-
-//! 入力や出力、経過の計算に利用するデータのデータ型の種類を表します。
-enum class DataType
-{
-	STRING,   //!< 文字列型です。
-	INTEGER,  //!< 整数型です。
-	BOOLEAN   //!< 真偽値型です。
-};
-
-//! トークンの種類を表します。
-enum class TokenKind
-{
-	NOT_TOKEN,              //!< トークンを表しません。
-	ASC,                    //!< ASCキーワードです。
-	AND,                    //!< ANDキーワードです。
-	BY,                     //!< BYキーワードです。
-	DESC,                   //!< DESCキーワードです。
-	FROM,                   //!< FROMキーワードです。
-	OR,                     //!< ORキーワードです。
-	ORDER,                  //!< ORDERキーワードです。
-	SELECT,                 //!< SELECTキーワードです。
-	WHERE,                  //!< WHEREキーワードです。
-	ASTERISK,               //!< ＊ 記号です。
-	COMMA,                  //!< ， 記号です。
-	CLOSE_PAREN,            //!< ） 記号です。
-	DOT,                    //!< ． 記号です。
-	EQUAL,                  //!< ＝ 記号です。
-	GREATER_THAN,           //!< ＞ 記号です。
-	GREATER_THAN_OR_EQUAL,  //!< ＞＝ 記号です。
-	LESS_THAN,              //!< ＜ 記号です。
-	LESS_THAN_OR_EQUAL,     //!< ＜＝ 記号です。
-	MINUS,                  //!< － 記号です。
-	NOT_EQUAL,              //!< ＜＞ 記号です。
-	OPEN_PAREN,             //!< （ 記号です。
-	PLUS,                   //!< ＋ 記号です。
-	SLASH,                  //!< ／ 記号です。
-	IDENTIFIER,             //!< 識別子です。
-	INT_LITERAL,            //!< 整数リテラルです。
-	STRING_LITERAL          //!< 文字列リテラルです。
-};
-
-//! 一つの値を持つデータです。
-typedef struct
-{
-	DataType type; //!< データの型です。
-
-	//! 実際のデータを格納する共用体です。
-	union
-	{
-		char string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
-		int integer;                  //!< データが整数型の場合の値です。
-		bool boolean;                 //!< データが真偽値型の場合の値です。
-	} value;
-} Data;
-
-//! WHERE句に指定する演算子の情報を表します。
-typedef struct
-{
-	TokenKind kind; //!< 演算子の種類を、演算子を記述するトークンの種類で表します。
-	int order; //!< 演算子の優先順位です。
-} Operator;
-
-//! トークンを表します。
-typedef struct
-{
-	TokenKind kind; //!< トークンの種類です。
-	char word[MAX_WORD_LENGTH]; //!< 記録されているトークンの文字列です。記録の必要がなければ空白です。
-} Token;
-
-//! 指定された列の情報です。どのテーブルに所属するかの情報も含みます。
-typedef struct
-{
-	char tableName[MAX_WORD_LENGTH]; //!< 列が所属するテーブル名です。指定されていない場合は空文字列となります。
-	char columnName[MAX_WORD_LENGTH]; //!< 指定された列の列名です。
-} Column;
-
-//! WHERE句の条件の式木を表します。
-typedef struct _extension_tree_node
-{
-	struct _extension_tree_node *parent; //!< 親となるノードです。根の式木の場合はNULLとなります。
-	struct _extension_tree_node *left;   //!< 左の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
-	Operator middleOperator;             //!< 中置される演算子です。自身が末端のとなる式木の場合の種類はNOT_TOKENとなります。
-	struct _extension_tree_node *right;  //!< 右の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
-	bool inParen;                        //!< 自身がかっこにくるまれているかどうかです。
-	int parenOpenBeforeClose;            //!< 木の構築中に0以外となり、自身の左にあり、まだ閉じてないカッコの開始の数となります。
-	int signCoefficient;                 //!< 自身が葉にあり、マイナス単項演算子がついている場合は-1、それ以外は1となります。
-	Column column;                       //!< 列場指定されている場合に、その列を表します。列指定ではない場合はcolumnNameが空文字列となります。
-	bool calculated;                     //!< 式の値を計算中に、計算済みかどうかです。
-	Data value;                          //!< 指定された、もしくは計算された値です。
-} ExtensionTreeNode;
-
-//! 行の情報を入力のテーブルインデックス、列インデックスの形で持ちます。
-typedef struct
-{
-	int table;  //!< 列が入力の何テーブル目の列かです。
-	int column; //!< 列が入力のテーブルの何列目かです。
-} ColumnIndex;
 
 // 以上ヘッダに相当する部分。
 
