@@ -9,7 +9,7 @@ test: testExecuteSQL.o ExecuteSQL.o
 testExecuteSQL.o: testExecuteSQL.cpp 
 	g++ -c testExecuteSQL.cpp
 
-ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp
+ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp extension_tree_node.hpp
 	g++ -c ExecuteSQL.cpp
 
 clean:

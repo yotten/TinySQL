@@ -2,6 +2,7 @@
 #include "data.hpp"
 #include "operator.hpp"
 #include "token.hpp"
+#include "extension_tree_node.hpp"
 
 #include <cstdio>
 #include <cstdbool>
@@ -14,7 +15,6 @@
 #pragma warning(disable:4996)
 
 #define MAX_FILE_LINE_LENGTH 4096          //!< 読み込むファイルの一行の最大長です。
-#define MAX_WORD_LENGTH 256                //!< SQLの一語の最大長です。
 #define MAX_TOKEN_COUNT 255                //!< SQLに含まれるトークンの最大値です。
 #define MAX_COLUMN_COUNT 16                //!< 入出力されるデータに含まれる列の最大数です。
 #define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
@@ -40,28 +40,6 @@ enum class ResultValue : int {
 	ERR_CSV_SYNTAX = 8,         //!< CSVの構文解析が失敗しました。
 	ERR_MEMORY_ALLOCATE = 9,    //!< メモリの取得に失敗しました。
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
-};
-
-//! 指定された列の情報です。どのテーブルに所属するかの情報も含みます。
-class Column {
-public:
-	char tableName[MAX_WORD_LENGTH]; //!< 列が所属するテーブル名です。指定されていない場合は空文字列となります。
-	char columnName[MAX_WORD_LENGTH]; //!< 指定された列の列名です。
-};
-
-//! WHERE句の条件の式木を表します。
-class ExtensionTreeNode {
-public:
-	struct ExtensionTreeNode *parent; //!< 親となるノードです。根の式木の場合はNULLとなります。
-	struct ExtensionTreeNode *left;   //!< 左の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
-	Operator middleOperator;             //!< 中置される演算子です。自身が末端のとなる式木の場合の種類はNOT_TOKENとなります。
-	struct ExtensionTreeNode *right;  //!< 右の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
-	bool inParen;                        //!< 自身がかっこにくるまれているかどうかです。
-	int parenOpenBeforeClose;            //!< 木の構築中に0以外となり、自身の左にあり、まだ閉じてないカッコの開始の数となります。
-	int signCoefficient;                 //!< 自身が葉にあり、マイナス単項演算子がついている場合は-1、それ以外は1となります。
-	Column column;                       //!< 列場指定されている場合に、その列を表します。列指定ではない場合はcolumnNameが空文字列となります。
-	bool calculated;                     //!< 式の値を計算中に、計算済みかどうかです。
-	Data value;                          //!< 指定された、もしくは計算された値です。
 };
 
 //! 行の情報を入力のテーブルインデックス、列インデックスの形で持ちます。
