@@ -133,15 +133,15 @@ static char *itoa(int n, char *buffer, int radix)
 int ExecuteSQL(const char* sql, const char* outputFileName)
 {
 	enum ResultValue error = ResultValue::OK;                           // 発生したエラーの種類です。
-	FILE *inputTableFiles[MAX_TABLE_COUNT] = { NULL };      // 読み込む入力ファイルの全てのファイルポインタです。
-	FILE *outputFile = NULL;                                // 書き込むファイルのファイルポインタです。
+	FILE *inputTableFiles[MAX_TABLE_COUNT] = { nullptr };      // 読み込む入力ファイルの全てのファイルポインタです。
+	FILE *outputFile = nullptr;                                // 書き込むファイルのファイルポインタです。
 	int result = 0;                                         // 関数の戻り値を一時的に保存します。
 	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
-	const char *search = NULL;                              // 文字列検索に利用するポインタです。
-	Data ***currentRow = NULL;                              // データ検索時に現在見ている行を表します。
+	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
+	Data ***currentRow = nullptr;                              // データ検索時に現在見ている行を表します。
 	Data **inputData[MAX_TABLE_COUNT][MAX_ROW_COUNT];       // 入力データです。
-	Data **outputData[MAX_ROW_COUNT] = { NULL };            // 出力データです。
-	Data **allColumnOutputData[MAX_ROW_COUNT] = { NULL };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
+	Data **outputData[MAX_ROW_COUNT] = { nullptr };            // 出力データです。
+	Data **allColumnOutputData[MAX_ROW_COUNT] = { nullptr };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
 	const char *alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
 	const char *alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
@@ -153,7 +153,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	for (size_t i = 0; i < sizeof(inputData) / sizeof(inputData[0]); i++)
 	{
 		for (size_t j = 0; j < sizeof(inputData[0]) / sizeof(inputData[0][0]); j++){
-			inputData[i][j] = NULL;
+			inputData[i][j] = nullptr;
 		}
 	}
 
@@ -214,7 +214,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		{ TokenKind::OR, 5 },
 	};
 
-	const char* charactorBackPoint = NULL; // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
+	const char* charactorBackPoint = nullptr; // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
 
 	const char* charactorCursol = sql; // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 
@@ -230,9 +230,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	int outputRowsNum = 0; // 出力データの現在の行数です。
 	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
 	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
-	Data ***currentRows[MAX_TABLE_COUNT] = { NULL }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
+	Data ***currentRows[MAX_TABLE_COUNT] = { nullptr }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	int whereExtensionNodesNum = 0; // 現在読み込まれているのwhereExtensionNodesの数です。
-	ExtensionTreeNode *whereTopNode = NULL; // 式木の根となるノードです。
+	ExtensionTreeNode *whereTopNode = nullptr; // 式木の根となるノードです。
 	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
 	int outputColumnNum = 0; // 出力するすべての行の現在の数です。
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
@@ -451,10 +451,10 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	for (size_t i = 0; i < sizeof(whereExtensionNodes) / sizeof(whereExtensionNodes[0]); i++)
 	{
 		whereExtensionNodes[i] = (ExtensionTreeNode){
-			NULL,
-			NULL,
+			nullptr,
+			nullptr,
 			{ TokenKind::NOT_TOKEN, 0 },
-			NULL,
+			nullptr,
 			false,
 			0,
 			1,
@@ -599,7 +599,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		if (tokenCursol->kind == TokenKind::WHERE){
 			readWhere = true;
 			++tokenCursol;
-			ExtensionTreeNode *currentNode = NULL; // 現在読み込んでいるノードです。
+			ExtensionTreeNode *currentNode = nullptr; // 現在読み込んでいるノードです。
 			while (true){
 				// オペランドを読み込みます。
 
@@ -870,7 +870,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 			// 生成した行を初期化します。
 			for (int j = 0; j < MAX_COLUMN_COUNT; ++j){
-				row[j] = NULL;
+				row[j] = nullptr;
 			}
 
 			charactorCursol = inputLine;
@@ -1049,7 +1049,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 生成した行を初期化します。
 		for (int i = 0; i < MAX_COLUMN_COUNT; ++i){
-			row[i] = NULL;
+			row[i] = nullptr;
 		}
 
 		// 行の各列のデータを入力から持ってきて設定します。
@@ -1069,7 +1069,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 		// 生成した行を初期化します。
 		for (int i = 0; i < MAX_TABLE_COUNT * MAX_COLUMN_COUNT; ++i){
-			allColumnsRow[i] = NULL;
+			allColumnsRow[i] = nullptr;
 		}
 
 		// allColumnsRowの列を設定します。
@@ -1265,8 +1265,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			if (!whereTopNode->value.value.boolean){
 				free(row);
 				free(allColumnsRow);
-				allColumnOutputData[--outputRowsNum] = NULL;
-				outputData[outputRowsNum] = NULL;
+				allColumnOutputData[--outputRowsNum] = nullptr;
+				outputData[outputRowsNum] = nullptr;
 			}
 			// WHERE条件の計算結果をリセットします。
 			for (int i = 0; i < whereExtensionNodesNum; ++i){
@@ -1381,7 +1381,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 	// 出力ファイルを開きます。
 	outputFile = fopen(outputFileName, "w");
-	if (outputFile == NULL){
+	if (outputFile == nullptr){
 		error = ResultValue::ERR_FILE_OPEN;
 		goto ERROR;
 	}
