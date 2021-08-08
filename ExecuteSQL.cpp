@@ -241,6 +241,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
 	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
 
+try {
 	// SQLをトークンに分割て読み込みます。
 	while (*charactorCursol){
 
@@ -265,8 +266,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				for (search = num; *search && *charactorCursol != *search; ++search){}
 				if (*search){
 					if (MAX_WORD_LENGTH - 1 <= wordLength){
-						error = ResultValue::ERR_MEMORY_OVER;
-						goto ERROR;
+						throw ResultValue::ERR_MEMORY_OVER;
 					}
 					literal.word[wordLength++] = *search;
 					++charactorCursol;
@@ -278,8 +278,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			if (!*search){
 				literal.word[wordLength] = '\0';
 				if (MAX_TOKEN_COUNT <= tokensNum){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				tokens[tokensNum++] = literal;
 				continue;
@@ -301,15 +300,13 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			// 次のシングルクォートがくるまで文字を読み込み続けます。
 			while (*charactorCursol && *charactorCursol != "\'"[0]){
 				if (MAX_WORD_LENGTH - 1 <= wordLength){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				literal.word[wordLength++] = *charactorCursol++;
 			}
 			if (*charactorCursol == "\'"[0]){
 				if (MAX_WORD_LENGTH - 1 <= wordLength){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				// 最後のシングルクォートを読み込みます。
 				literal.word[wordLength++] = *charactorCursol++;
@@ -317,15 +314,13 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				// 文字列の終端文字をつけます。
 				literal.word[wordLength] = '\0';
 				if (MAX_TOKEN_COUNT <= tokensNum){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				tokens[tokensNum++] = literal;
 				continue;
 			}
 			else{
-				error = ResultValue::ERR_TOKEN_CANT_READ;
-				goto ERROR;
+				throw ResultValue::ERR_TOKEN_CANT_READ;
 			}
 		}
 
@@ -348,8 +343,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 				// 見つかったキーワードを生成します。
 				if (MAX_TOKEN_COUNT <= tokensNum){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				tokens[tokensNum++] = (Token){ condition.kind, "" };
 				found = true;
@@ -377,8 +371,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 				// 見つかった記号を生成します。
 				if (MAX_TOKEN_COUNT <= tokensNum){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				tokens[tokensNum++] = (Token){ condition.kind, "" };
 				found = true;
@@ -403,8 +396,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				for (search = alpahNumUnder; *search && *charactorCursol != *search; ++search){};
 				if (*search){
 					if (MAX_WORD_LENGTH - 1 <= wordLength){
-						error = ResultValue::ERR_MEMORY_OVER;
-						goto ERROR;
+						throw ResultValue::ERR_MEMORY_OVER;
 					}
 					identifier.word[wordLength++] = *search;
 					charactorCursol++;
@@ -416,8 +408,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 			// 読み込んだ識別子を登録します。
 			if (MAX_TOKEN_COUNT <= tokensNum){
-				error = ResultValue::ERR_MEMORY_OVER;
-				goto ERROR;
+				throw ResultValue::ERR_MEMORY_OVER;
 			}
 			tokens[tokensNum++] = identifier;
 			continue;
@@ -426,8 +417,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			charactorCursol = charactorBackPoint;
 		}
 
-		error = ResultValue::ERR_TOKEN_CANT_READ;
-		goto ERROR;
+		throw ResultValue::ERR_TOKEN_CANT_READ;
 	}
 
 	// トークン列を解析し、構文を読み取ります。
@@ -471,8 +461,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		++tokenCursol;
 	}
 	else{
-		error = ResultValue::ERR_SQL_SYNTAX;
-		goto ERROR;
+		throw ResultValue::ERR_SQL_SYNTAX;
 	}
 
 	if (tokenCursol->kind == TokenKind::ASTERISK){
@@ -487,8 +476,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 			if (tokenCursol->kind == TokenKind::IDENTIFIER){
 				if (MAX_COLUMN_COUNT <= selectColumnsNum){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				// テーブル名が指定されていない場合と仮定して読み込みます。
 				strncpy(selectColumns[selectColumnsNum].tableName, "", MAX_WORD_LENGTH);
@@ -504,15 +492,13 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						++tokenCursol;
 					}
 					else{
-						error = ResultValue::ERR_SQL_SYNTAX;
-						goto ERROR;
+						throw ResultValue::ERR_SQL_SYNTAX;
 					}
 				}
 				++selectColumnsNum;
 			}
 			else{
-				error = ResultValue::ERR_SQL_SYNTAX;
-				goto ERROR;
+				throw ResultValue::ERR_SQL_SYNTAX;
 			}
 			first = false;
 		}
@@ -523,14 +509,12 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 二度目のORDER句はエラーです。
 		if (readOrder && tokenCursol->kind == TokenKind::ORDER){
-			error = ResultValue::ERR_SQL_SYNTAX;
-			goto ERROR;
+			throw ResultValue::ERR_SQL_SYNTAX;
 		}
 
 		// 二度目のWHERE句はエラーです。
 		if (readWhere && tokenCursol->kind == TokenKind::WHERE){
-			error = ResultValue::ERR_SQL_SYNTAX;
-			goto ERROR;
+			throw ResultValue::ERR_SQL_SYNTAX;
 		}
 		// ORDER句を読み込みます。
 		if (tokenCursol->kind == TokenKind::ORDER){
@@ -545,8 +529,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					}
 					if (tokenCursol->kind == TokenKind::IDENTIFIER){
 						if (MAX_COLUMN_COUNT <= orderByColumnsNum){
-							error = ResultValue::ERR_MEMORY_OVER;
-							goto ERROR;
+							throw ResultValue::ERR_MEMORY_OVER;
 						}
 						// テーブル名が指定されていない場合と仮定して読み込みます。
 						strncpy(orderByColumns[orderByColumnsNum].tableName, "", MAX_WORD_LENGTH);
@@ -562,8 +545,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 								++tokenCursol;
 							}
 							else{
-								error = ResultValue::ERR_SQL_SYNTAX;
-								goto ERROR;
+								throw ResultValue::ERR_SQL_SYNTAX;
 							}
 						}
 
@@ -583,15 +565,13 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						++orderByColumnsNum;
 					}
 					else{
-						error = ResultValue::ERR_SQL_SYNTAX;
-						goto ERROR;
+						throw ResultValue::ERR_SQL_SYNTAX;
 					}
 					first = false;
 				}
 			}
 			else{
-				error = ResultValue::ERR_SQL_SYNTAX;
-				goto ERROR;
+				throw ResultValue::ERR_SQL_SYNTAX;
 			}
 		}
 
@@ -605,8 +585,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 				// オペランドのノードを新しく生成します。
 				if (MAX_EXTENSION_TREE_NODE_COUNT <= whereExtensionNodesNum){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				if (currentNode){
 					// 現在のノードを右の子にずらし、元の位置に新しいノードを挿入します。
@@ -630,8 +609,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 					// +-を前置するのは列名と数値リテラルのみです。
 					if (tokenCursol[1].kind != TokenKind::IDENTIFIER && tokenCursol[1].kind != TokenKind::INT_LITERAL){
-						error = ResultValue::ERR_WHERE_OPERAND_TYPE;
-						goto ERROR;
+						throw ResultValue::ERR_WHERE_OPERAND_TYPE;
 					}
 					if (tokenCursol->kind == TokenKind::MINUS){
 						currentNode->signCoefficient = -1;
@@ -656,8 +634,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 							++tokenCursol;
 						}
 						else{
-							error = ResultValue::ERR_SQL_SYNTAX;
-							goto ERROR;
+							throw ResultValue::ERR_SQL_SYNTAX;
 						}
 					}
 				}
@@ -675,8 +652,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					++tokenCursol;
 				}
 				else{
-					error = ResultValue::ERR_SQL_SYNTAX;
-					goto ERROR;
+					throw ResultValue::ERR_SQL_SYNTAX;
 				}
 
 				// オペランドの右のカッコ閉じるを読み込みます。
@@ -738,8 +714,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 					// 演算子のノードを新しく生成します。
 					if (MAX_EXTENSION_TREE_NODE_COUNT <= whereExtensionNodesNum){
-						error = ResultValue::ERR_MEMORY_OVER;
-						goto ERROR;
+						throw ResultValue::ERR_MEMORY_OVER;
 					}
 					currentNode = &whereExtensionNodes[whereExtensionNodesNum++];
 					currentNode->middleOperator = middleOperator;
@@ -773,8 +748,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		++tokenCursol;
 	}
 	else{
-		error = ResultValue::ERR_SQL_SYNTAX;
-		goto ERROR;
+		throw ResultValue::ERR_SQL_SYNTAX;
 	}
 
 	while (tokenCursol->kind == TokenKind::COMMA || first){
@@ -783,23 +757,20 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 		if (tokenCursol->kind == TokenKind::IDENTIFIER){
 			if (MAX_TABLE_COUNT <= tableNamesNum){
-				error = ResultValue::ERR_MEMORY_OVER;
-				goto ERROR;
+				throw ResultValue::ERR_MEMORY_OVER;
 			}
 			strncpy(tableNames[tableNamesNum++], tokenCursol->word, MAX_WORD_LENGTH);
 			++tokenCursol;
 		}
 		else{
-			error = ResultValue::ERR_SQL_SYNTAX;
-			goto ERROR;
+			throw ResultValue::ERR_SQL_SYNTAX;
 		}
 		first = false;
 	}
 
 	// 最後のトークンまで読み込みが進んでいなかったらエラーです。
 	if (tokenCursol < &tokens[tokensNum]){
-		error = ResultValue::ERR_SQL_SYNTAX;
-		goto ERROR;
+		throw ResultValue::ERR_SQL_SYNTAX;
 	}
 	Column inputColumns[MAX_TABLE_COUNT][MAX_COLUMN_COUNT]; // 入力されたCSVの行の情報です。
 	// inputColumnsを初期化します。
@@ -822,8 +793,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// 入力ファイルを開きます。
 		inputTableFiles[i] = fopen(fileName, "r");
 		if (!inputTableFiles[i]){
-			error = ResultValue::ERR_FILE_OPEN;
-			goto ERROR;
+			throw ResultValue::ERR_FILE_OPEN;
 		}
 
 		// 入力CSVのヘッダ行を読み込みます。
@@ -834,8 +804,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			// 読み込んだ行を最後まで読みます。
 			while (*charactorCursol && *charactorCursol != '\r' && *charactorCursol != '\n'){
 				if (MAX_COLUMN_COUNT <= inputColumnNums[i]){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				strncpy(inputColumns[i][inputColumnNums[i]].tableName, tableNames[i], MAX_WORD_LENGTH);
 				char *writeCursol = inputColumns[i][inputColumnNums[i]++].columnName; // 列名の書き込みに利用するカーソルです。
@@ -852,21 +821,18 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 		}
 		else{
-			error = ResultValue::ERR_CSV_SYNTAX;
-			goto ERROR;
+			throw ResultValue::ERR_CSV_SYNTAX;
 		}
 
 		// 入力CSVのデータ行を読み込みます。
 		int rowNum = 0;
 		while (fgets(inputLine, MAX_FILE_LINE_LENGTH, inputTableFiles[i])){
 			if (MAX_ROW_COUNT <= rowNum){
-				error = ResultValue::ERR_MEMORY_OVER;
-				goto ERROR;
+				throw ResultValue::ERR_MEMORY_OVER;
 			}
 			Data **row = inputData[i][rowNum++] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 入力されている一行分のデータです。
 			if (!row){
-				error = ResultValue::ERR_MEMORY_ALLOCATE;
-				goto ERROR;
+				throw ResultValue::ERR_MEMORY_ALLOCATE;
 			}
 			// 生成した行を初期化します。
 			for (int j = 0; j < MAX_COLUMN_COUNT; ++j){
@@ -881,13 +847,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 				// 読み込んだデータを書き込む行のカラムを生成します。
 				if (MAX_COLUMN_COUNT <= columnNum){
-					error = ResultValue::ERR_MEMORY_OVER;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_OVER;
 				}
 				row[columnNum] = (Data*)malloc(sizeof(Data));
 				if (!row[columnNum]){
-					error = ResultValue::ERR_MEMORY_ALLOCATE;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_ALLOCATE;
 				}
 				*row[columnNum] = (Data){ DataType::STRING, { "" } };
 				char *writeCursol = row[columnNum++]->value.string; // データ文字列の書き込みに利用するカーソルです。
@@ -992,14 +956,12 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 					// 既に見つかっているのにもう一つ見つかったらエラーです。
 					if (found){
-						error = ResultValue::ERR_BAD_COLUMN_NAME;
-						goto ERROR;
+						throw ResultValue::ERR_BAD_COLUMN_NAME;
 					}
 					found = true;
 					// 見つかった値を持つ列のデータを生成します。
 					if (MAX_COLUMN_COUNT <= selectColumnIndexesNum){
-						error = ResultValue::ERR_MEMORY_OVER;
-						goto ERROR;
+						throw ResultValue::ERR_MEMORY_OVER;
 					}
 					selectColumnIndexes[selectColumnIndexesNum++] = (ColumnIndex){ .table = j, .column = k };
 				}
@@ -1007,8 +969,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 		// 一つも見つからなくてもエラーです。
 		if (!found){
-			error = ResultValue::ERR_BAD_COLUMN_NAME;
-			goto ERROR;
+			throw ResultValue::ERR_BAD_COLUMN_NAME;
 		}
 	}
 
@@ -1038,13 +999,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	// 出力するデータを設定します。
 	while (true){
 		if (MAX_ROW_COUNT <= outputRowsNum){
-			error = ResultValue::ERR_MEMORY_OVER;
-			goto ERROR;
+			throw ResultValue::ERR_MEMORY_OVER;
 		}
 		Data **row = outputData[outputRowsNum] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
 		if (!row){
-			error = ResultValue::ERR_MEMORY_ALLOCATE;
-			goto ERROR;
+			throw ResultValue::ERR_MEMORY_ALLOCATE;
 		}
 
 		// 生成した行を初期化します。
@@ -1056,16 +1015,14 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		for (int i = 0; i < selectColumnIndexesNum; ++i){
 			row[i] = (Data*)malloc(sizeof(Data));
 			if (!row[i]){
-				error = ResultValue::ERR_MEMORY_ALLOCATE;
-				goto ERROR;
+				throw ResultValue::ERR_MEMORY_ALLOCATE;
 			}
 			*row[i] = *(*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 		}
 
 		Data **allColumnsRow = allColumnOutputData[outputRowsNum++] = (Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 		if (!allColumnsRow){
-			error = ResultValue::ERR_MEMORY_ALLOCATE;
-			goto ERROR;
+			throw ResultValue::ERR_MEMORY_ALLOCATE;
 		}
 		// 生成した行を初期化します。
 		for (int i = 0; i < MAX_TABLE_COUNT * MAX_COLUMN_COUNT; ++i){
@@ -1078,8 +1035,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			for (int j = 0; j < inputColumnNums[i]; ++j){
 				allColumnsRow[allColumnsNum] = (Data*)malloc(sizeof(Data));
 				if (!allColumnsRow[allColumnsNum]){
-					error = ResultValue::ERR_MEMORY_ALLOCATE;
-					goto ERROR;
+					throw ResultValue::ERR_MEMORY_ALLOCATE;
 				}
 				*allColumnsRow[allColumnsNum++] = *(*currentRows[i])[j];
 			}
@@ -1122,8 +1078,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 								!*whereTableNameCursol && !*allInputTableNameCursol)){
 								// 既に見つかっているのにもう一つ見つかったらエラーです。
 								if (found){
-									error = ResultValue::ERR_BAD_COLUMN_NAME;
-									goto ERROR;
+									throw ResultValue::ERR_BAD_COLUMN_NAME;
 								}
 								found = true;
 								currentNode->value = *allColumnsRow[i];
@@ -1131,8 +1086,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						}
 						// 一つも見つからなくてもエラーです。
 						if (!found){
-							error = ResultValue::ERR_BAD_COLUMN_NAME;
-							goto ERROR;
+							throw ResultValue::ERR_BAD_COLUMN_NAME;
 						}
 						;
 						// 符号を考慮して値を計算します。
@@ -1152,8 +1106,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					// 比較できるのは文字列型か整数型で、かつ左右の型が同じ場合です。
 					if (currentNode->left->value.type != DataType::INTEGER && currentNode->left->value.type != DataType::STRING ||
 						currentNode->left->value.type != currentNode->right->value.type){
-						error = ResultValue::ERR_WHERE_OPERAND_TYPE;
-						goto ERROR;
+						throw ResultValue::ERR_WHERE_OPERAND_TYPE;
 					}
 					currentNode->value.type = DataType::BOOLEAN;
 
@@ -1213,8 +1166,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 					// 演算できるのは整数型同士の場合のみです。
 					if (currentNode->left->value.type != DataType::INTEGER || currentNode->right->value.type != DataType::INTEGER){
-						error = ResultValue::ERR_WHERE_OPERAND_TYPE;
-						goto ERROR;
+						throw ResultValue::ERR_WHERE_OPERAND_TYPE;
 					}
 					currentNode->value.type = DataType::INTEGER;
 
@@ -1240,8 +1192,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 					// 演算できるのは真偽値型同士の場合のみです。
 					if (currentNode->left->value.type != DataType::BOOLEAN || currentNode->right->value.type != DataType::BOOLEAN){
-						error = ResultValue::ERR_WHERE_OPERAND_TYPE;
-						goto ERROR;
+						throw ResultValue::ERR_WHERE_OPERAND_TYPE;
 					}
 					currentNode->value.type = DataType::BOOLEAN;
 
@@ -1316,21 +1267,18 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					!*orderByTableNameCursol && !*allInputTableNameCursol)){
 					// 既に見つかっているのにもう一つ見つかったらエラーです。
 					if (found){
-						error = ResultValue::ERR_BAD_COLUMN_NAME;
-						goto ERROR;
+						throw ResultValue::ERR_BAD_COLUMN_NAME;
 					}
 					found = true;
 					if (MAX_COLUMN_COUNT <= orderByColumnIndexesNum){
-						error = ResultValue::ERR_MEMORY_OVER;
-						goto ERROR;
+						throw ResultValue::ERR_MEMORY_OVER;
 					}
 					orderByColumnIndexes[orderByColumnIndexesNum++] = j;
 				}
 			}
 			// 一つも見つからなくてもエラーです。
 			if (!found){
-				error = ResultValue::ERR_BAD_COLUMN_NAME;
-				goto ERROR;
+				throw ResultValue::ERR_BAD_COLUMN_NAME;
 			}
 		}
 
@@ -1382,29 +1330,25 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	// 出力ファイルを開きます。
 	outputFile = fopen(outputFileName, "w");
 	if (outputFile == nullptr){
-		error = ResultValue::ERR_FILE_OPEN;
-		goto ERROR;
+		throw ResultValue::ERR_FILE_OPEN;
 	}
 
 	// 出力ファイルに列名を出力します。
 	for (int i = 0; i < selectColumnsNum; ++i){
 		result = fputs(outputColumns[i].columnName, outputFile);
 		if (result == EOF){
-			error = ResultValue::ERR_FILE_WRITE;
-			goto ERROR;
+			throw ResultValue::ERR_FILE_WRITE;
 		}
 		if (i < selectColumnsNum - 1){
 			result = fputs(",", outputFile);
 			if (result == EOF){
-				error = ResultValue::ERR_FILE_WRITE;
-				goto ERROR;
+				throw ResultValue::ERR_FILE_WRITE;
 			}
 		}
 		else{
 			result = fputs("\n", outputFile);
 			if (result == EOF){
-				error = ResultValue::ERR_FILE_WRITE;
-				goto ERROR;
+				throw ResultValue::ERR_FILE_WRITE;
 			}
 		}
 	}
@@ -1425,21 +1369,18 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 			result = fputs(outputString, outputFile);
 			if (result == EOF){
-				error = ResultValue::ERR_FILE_WRITE;
-				goto ERROR;
+				throw ResultValue::ERR_FILE_WRITE;
 			}
 			if (i < selectColumnsNum - 1){
 				result = fputs(",", outputFile);
 				if (result == EOF){
-					error = ResultValue::ERR_FILE_WRITE;
-					goto ERROR;
+					throw ResultValue::ERR_FILE_WRITE;
 				}
 			}
 			else{
 				result = fputs("\n", outputFile);
 				if (result == EOF){
-					error = ResultValue::ERR_FILE_WRITE;
-					goto ERROR;
+					throw ResultValue::ERR_FILE_WRITE;
 				}
 			}
 			++column;
@@ -1454,16 +1395,14 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		if (inputTableFiles[i]){
 			fclose(inputTableFiles[i]);
 			if (result == EOF){
-				error = ResultValue::ERR_FILE_CLOSE;
-				goto ERROR;
+				throw ResultValue::ERR_FILE_CLOSE;
 			}
 		}
 	}
 	if (outputFile){
 		fclose(outputFile);
 		if (result == EOF){
-			error = ResultValue::ERR_FILE_CLOSE;
-			goto ERROR;
+			throw ResultValue::ERR_FILE_CLOSE;
 		}
 	}
 
@@ -1499,10 +1438,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	}
 
 	return static_cast<int>(ResultValue::OK);
-
-ERROR:
-	// エラー時の処理です。
-
+}
+catch (ResultValue error) {
 	// ファイルリソースを解放します。
 	for (int i = 0; i < MAX_TABLE_COUNT; ++i){
 		if (inputTableFiles[i]){
@@ -1544,4 +1481,5 @@ ERROR:
 		currentRow++;
 	}
 	return  static_cast<int>(error);
+}
 }
