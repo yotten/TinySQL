@@ -1,6 +1,7 @@
 //! @file
 #include "data.hpp"
 #include "operator.hpp"
+#include "token.hpp"
 
 #include <cstdio>
 #include <cstdbool>
@@ -39,13 +40,6 @@ enum class ResultValue : int {
 	ERR_CSV_SYNTAX = 8,         //!< CSVの構文解析が失敗しました。
 	ERR_MEMORY_ALLOCATE = 9,    //!< メモリの取得に失敗しました。
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
-};
-
-//! トークンを表します。
-class Token {
-public:
-	TokenKind kind; //!< トークンの種類です。
-	char word[MAX_WORD_LENGTH]; //!< 記録されているトークンの文字列です。記録の必要がなければ空白です。
 };
 
 //! 指定された列の情報です。どのテーブルに所属するかの情報も含みます。

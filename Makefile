@@ -6,11 +6,11 @@ test: testExecuteSQL.o ExecuteSQL.o
 	./testExecuteSQL
 
 #testExecuteSQL.o: testExecuteSQL.cpp
-testExecuteSQL.o: testExecuteSQL.cpp data.hpp operator.hpp 
+testExecuteSQL.o: testExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp
 	g++ -c testExecuteSQL.cpp
 
-ExecuteSQL.o: ExecuteSQL.cpp
-	gcc -c ExecuteSQL.cpp
+ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp
+	g++ -c ExecuteSQL.cpp
 
 clean:
 	rm *.o
