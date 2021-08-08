@@ -3,6 +3,7 @@
 #include "operator.hpp"
 #include "token.hpp"
 #include "extension_tree_node.hpp"
+#include "column_index.hpp"
 
 #include <cstdio>
 #include <cstdbool>
@@ -40,13 +41,6 @@ enum class ResultValue : int {
 	ERR_CSV_SYNTAX = 8,         //!< CSVの構文解析が失敗しました。
 	ERR_MEMORY_ALLOCATE = 9,    //!< メモリの取得に失敗しました。
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
-};
-
-//! 行の情報を入力のテーブルインデックス、列インデックスの形で持ちます。
-class ColumnIndex {
-public:
-	int table;  //!< 列が入力の何テーブル目の列かです。
-	int column; //!< 列が入力のテーブルの何列目かです。
 };
 
 // 以上ヘッダに相当する部分。
