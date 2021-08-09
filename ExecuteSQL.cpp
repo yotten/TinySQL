@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <ctype.h>
 #include <cstring>
+#include <algorithm>
 
 #include "ExecuteSQL.hpp"
 
@@ -43,23 +44,14 @@ enum class ResultValue : int {
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
 };
 
-// 以上ヘッダに相当する部分。
-
-static int min(int a, int b)
-{
-	if (a < b) {
-		return a;
-	}
-
-	return b;
-}
-
 static char *itoa(int n, char *buffer, int radix)
 {
 	sprintf(buffer, "%d", n);
 
 	return buffer;
 }
+
+using namespace std;
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。

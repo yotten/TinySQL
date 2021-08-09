@@ -1,8 +1,8 @@
 CFLAGS=-std=c++14 -Wall
 LDFLAGS=-pthread -lgtest_main -lgtest
 
-test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o
-	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o $(CFLAGS) $(LDFLAGS)
+test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o
+	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o $(CFLAGS) $(LDFLAGS)
 	./testExecuteSQL
 
 #testExecuteSQL.o: testExecuteSQL.cpp
@@ -21,6 +21,8 @@ operator.o: operator.cpp operator.hpp
 token.o: token.cpp token.hpp
 	g++ -c token.cpp
 
+column.o: column.cpp
+	g++ -c column.cpp
 clean:
 	rm *.o
 
