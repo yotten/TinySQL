@@ -443,7 +443,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			whereExtensionNodes[i] = (ExtensionTreeNode){
 				nullptr,
 				nullptr,
-				{ TokenKind::NOT_TOKEN, 0 },
+				Operator(),
 				nullptr,
 				false,
 				0,
@@ -680,8 +680,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 
 					// 演算子(オペレーターを読み込みます。
-					Operator middleOperator =(Operator){ .kind = TokenKind::NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
-
+					//Operator middleOperator =(Operator){ .kind = TokenKind::NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
+					Operator middleOperator;
 					// 現在見ている演算子の情報を探します。
 					found = false;
 					for (int j = 0; j < sizeof(operators) / sizeof(operators[0]); ++j){

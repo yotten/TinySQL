@@ -7,9 +7,7 @@
 //! Dataクラスの新しいインスタンスを初期化
 Data::Data()
 {
-    for (int i = 0; i < MAX_DATA_LENGTH; i++) {
-        value.string[0] = 0x00;
-    }
+
 }
 
 //! Dataクラスの新しいインスタンスを初期化
