@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAX_DATA_LENGTH 256                //!< 入出力されるデータの、各列の最大長です。
+#include "token_kind.hpp"
 
 //! 入力や出力、経過の計算に利用するデータのデータ型の種類を表します。
 enum class DataType
