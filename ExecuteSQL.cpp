@@ -450,7 +450,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				1,
 				{ "", "" },
 				false,
-				{ DataType::STRING, { "" } },
+				Data(),
 			};
 		}
 
@@ -639,11 +639,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						}
 					}
 					else if (tokenCursol->kind == TokenKind::INT_LITERAL){
-						currentNode->value = (Data){ .type = DataType::INTEGER, .value = { .integer = atoi(tokenCursol->word) } };
+						currentNode->value = Data(atoi(tokenCursol->word));
 						++tokenCursol;
 					}
 					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
-						currentNode->value = (Data){ DataType::STRING, { "" } };
+						currentNode->value = Data("");
 
 						// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
 						strncpy(currentNode->value.value.string, tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
@@ -853,7 +853,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					if (!row[columnNum]){
 						throw ResultValue::ERR_MEMORY_ALLOCATE;
 					}
-					*row[columnNum] = (Data){ DataType::STRING, { "" } };
+					*row[columnNum] = Data("");
 					char *writeCursol = row[columnNum++]->value.string; // データ文字列の書き込みに利用するカーソルです。
 
 					// データ文字列を一つ読みます。
@@ -902,7 +902,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				if (!found){
 					currentRow = inputData[i];
 					while (*currentRow){
-						*(*currentRow)[j] = (Data){ .type = DataType::INTEGER, .value = { .integer = atoi((*currentRow)[j]->value.string) } };
+						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->value.string));
 						++currentRow;
 					}
 				}

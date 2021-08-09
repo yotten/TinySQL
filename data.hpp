@@ -13,7 +13,7 @@ enum class DataType
 //! 一つの値を持つデータです。
 class Data {
 public:
-	DataType type; //!< データの型です。
+	DataType type = DataType::STRING; //!< データの型です。
 
 	//! 実際のデータを格納する共用体です。
 	union
@@ -22,4 +22,19 @@ public:
 		int integer;                  //!< データが整数型の場合の値です。
 		bool boolean;                 //!< データが真偽値型の場合の値です。
 	} value;
+
+	//! Dataクラスの新しいインスタンスを初期化します。
+	Data();
+
+	//! Dataクラスの新しいインスタンスを初期化します。
+	//! @param [in] value データの値です。
+	Data(const char* value);
+
+	//! Dataクラスの新しいインスタンスを初期化します。
+	//! @param [in] value データの値です。
+	Data(const int value);
+
+	//! Dataクラスの新しいインスタンスを初期化します。
+	//! @param [in] value データの値です。
+	Data(const bool value);
 };
