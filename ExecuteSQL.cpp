@@ -432,18 +432,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// whereExtensionNodesを初期化します。
 		for (size_t i = 0; i < sizeof(whereExtensionNodes) / sizeof(whereExtensionNodes[0]); i++)
 		{
-			whereExtensionNodes[i] = (ExtensionTreeNode){
-				nullptr,
-				nullptr,
-				Operator(),
-				nullptr,
-				false,
-				0,
-				1,
-				{ "", "" },
-				false,
-				Data(),
-			};
+			whereExtensionNodes[i] = ExtensionTreeNode();
 		}
 
 		// SQLの構文を解析し、必要な情報を取得します。
