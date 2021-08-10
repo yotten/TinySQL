@@ -188,8 +188,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		{ TokenKind::SLASH, "/" },
 	};
 
-	Token tokens[MAX_TOKEN_COUNT]; // SQLを分割したトークンです。
-	int tokensNum = 0; // tokensの有効な数です。
+	vector<Token> tokens; // SQLを分割したトークンです。
 
 	// 演算子の情報です。
 	const Operator operators[] =
@@ -231,7 +230,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	int outputColumnNum = 0; // 出力するすべての行の現在の数です。
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
 	int selectColumnIndexesNum = 0; // selectColumnIndexesの現在の数。
-	Token *tokenCursol = tokens; // 現在見ているトークンを指します。
+	Token *tokenCursol; 	// 現在見ているトークンを指します。
 	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
 	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
 
@@ -271,10 +270,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				for (search = alpahUnder; *search && *charactorCursol != *search; ++search){}
 				if (!*search){
 					literal.word[wordLength] = '\0';
-					if (MAX_TOKEN_COUNT <= tokensNum){
-						throw ResultValue::ERR_MEMORY_OVER;
-					}
-					tokens[tokensNum++] = literal;
+					tokens.push_back(literal);
 					continue;
 				}
 				else{
@@ -307,10 +303,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 					// 文字列の終端文字をつけます。
 					literal.word[wordLength] = '\0';
-					if (MAX_TOKEN_COUNT <= tokensNum){
-						throw ResultValue::ERR_MEMORY_OVER;
-					}
-					tokens[tokensNum++] = literal;
+					tokens.push_back(literal);
 					continue;
 				}
 				else{
@@ -334,13 +327,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				for (search = alpahNumUnder; *search && *charactorCursol != *search; ++search){};
 
 				if (!*wordCursol && !*search){
-
 					// 見つかったキーワードを生成します。
-					if (MAX_TOKEN_COUNT <= tokensNum){
-						throw ResultValue::ERR_MEMORY_OVER;
-					}
-					
-					tokens[tokensNum++] = Token(keywordCondtion.kind);
+					tokens.push_back(Token(keywordCondtion.kind));
 					found = true;
 				}
 				else{
@@ -363,11 +351,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				}
 				if (!*wordCursol){
 					// 見つかった記号を生成します。
-					if (MAX_TOKEN_COUNT <= tokensNum){
-						throw ResultValue::ERR_MEMORY_OVER;
-					}
-
-					tokens[tokensNum++] = Token(signCondition.kind);
+					tokens.push_back(Token(signCondition.kind));
 					found = true;
 				}
 				else{
@@ -401,10 +385,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				identifier.word[wordLength] = '\0';
 
 				// 読み込んだ識別子を登録します。
-				if (MAX_TOKEN_COUNT <= tokensNum){
-					throw ResultValue::ERR_MEMORY_OVER;
-				}
-				tokens[tokensNum++] = identifier;
+				tokens.push_back(identifier);
 				continue;
 			}
 			else{
@@ -415,7 +396,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 
 		// トークン列を解析し、構文を読み取ります。
-
+		tokenCursol = &tokens[0];
 		Column selectColumns[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // SELECT句に指定された列名です。
 		// selectColumnsを初期化します。
 		for (size_t i = 0; i < sizeof(selectColumns) / sizeof(selectColumns[0]); i++)
@@ -752,7 +733,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 
 		// 最後のトークンまで読み込みが進んでいなかったらエラーです。
-		if (tokenCursol < &tokens[tokensNum]){
+		if (tokenCursol <= &tokens.back()) {
 			throw ResultValue::ERR_SQL_SYNTAX;
 		}
 		Column inputColumns[MAX_TABLE_COUNT][MAX_COLUMN_COUNT]; // 入力されたCSVの行の情報です。
