@@ -191,8 +191,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	vector<Token> tokens; // SQLを分割したトークンです。
 
 	// 演算子の情報です。
-	const Operator operators[] =
-	{
+	const vector<Operator> operators = {
 		{ TokenKind::ASTERISK, 1 },
 		{ TokenKind::SLASH, 1 },
 		{ TokenKind::PLUS, 2 },
@@ -648,9 +647,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					Operator middleOperator;
 					// 現在見ている演算子の情報を探します。
 					found = false;
-					for (int j = 0; j < sizeof(operators) / sizeof(operators[0]); ++j){
-						if (operators[j].kind == tokenCursol->kind){
-							middleOperator = operators[j];
+					for (auto &anOperator : operators) {
+						if (anOperator.kind == tokenCursol->kind) {
+							middleOperator = anOperator;
 							found = true;
 							break;
 						}
