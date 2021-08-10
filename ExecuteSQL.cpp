@@ -169,7 +169,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	};
 
 	// 記号をトークンとして認識するための記号一覧情報です。
-	const Token signConditions[] =
+	//const Token signConditions[] =
+	const vector<Token> signConditions =
 	{
 		{ TokenKind::GREATER_THAN_OR_EQUAL, ">=" },
 		{ TokenKind::LESS_THAN_OR_EQUAL, "<=" },
@@ -352,22 +353,21 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 			// 記号を読み込みます。
 			found = false;
-			for (size_t i = 0; i < sizeof(signConditions) / sizeof(Token); ++i){
+			for (auto &signCondition : signConditions) {
 				charactorBackPoint = charactorCursol;
-				Token condition = signConditions[i]; // 確認する記号の条件です。
-				char *wordCursol = condition.word; // 確認する記号の文字列のうち、現在確認している一文字を指します。
+				const char *wordCursol = signCondition.word; // 確認する記号の文字列のうち、現在確認している一文字を指します。
 
 				// 記号が指定した文字列となっているか確認します。
 				while (*wordCursol && toupper(*charactorCursol++) == *wordCursol){
 					++wordCursol;
 				}
 				if (!*wordCursol){
-
 					// 見つかった記号を生成します。
 					if (MAX_TOKEN_COUNT <= tokensNum){
 						throw ResultValue::ERR_MEMORY_OVER;
 					}
-					tokens[tokensNum++] = (Token){ condition.kind, "" };
+
+					tokens[tokensNum++] = Token(signCondition.kind);
 					found = true;
 				}
 				else{
