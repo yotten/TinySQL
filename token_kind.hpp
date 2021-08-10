@@ -1,6 +1,7 @@
 #pragma once
 
 #define MAX_WORD_LENGTH 256                //!< SQLの一語の最大長です。
+#define MAX_DATA_LENGTH 256                //!< 入出力されるデータの、各列の最大長です。
 
 //! トークンの種類を表します。
 enum class TokenKind

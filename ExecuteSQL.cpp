@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <ctype.h>
 #include <cstring>
+#include <algorithm>
 
 #include "ExecuteSQL.hpp"
 
@@ -43,23 +44,14 @@ enum class ResultValue : int {
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
 };
 
-// 以上ヘッダに相当する部分。
-
-static int min(int a, int b)
-{
-	if (a < b) {
-		return a;
-	}
-
-	return b;
-}
-
 static char *itoa(int n, char *buffer, int radix)
 {
 	sprintf(buffer, "%d", n);
 
 	return buffer;
 }
+
+using namespace std;
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
@@ -440,18 +432,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// whereExtensionNodesを初期化します。
 		for (size_t i = 0; i < sizeof(whereExtensionNodes) / sizeof(whereExtensionNodes[0]); i++)
 		{
-			whereExtensionNodes[i] = (ExtensionTreeNode){
-				nullptr,
-				nullptr,
-				{ TokenKind::NOT_TOKEN, 0 },
-				nullptr,
-				false,
-				0,
-				1,
-				{ "", "" },
-				false,
-				{ DataType::STRING, { "" } },
-			};
+			whereExtensionNodes[i] = ExtensionTreeNode();
 		}
 
 		// SQLの構文を解析し、必要な情報を取得します。
@@ -639,11 +620,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						}
 					}
 					else if (tokenCursol->kind == TokenKind::INT_LITERAL){
-						currentNode->value = (Data){ .type = DataType::INTEGER, .value = { .integer = atoi(tokenCursol->word) } };
+						currentNode->value = Data(atoi(tokenCursol->word));
 						++tokenCursol;
 					}
 					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
-						currentNode->value = (Data){ DataType::STRING, { "" } };
+						currentNode->value = Data("");
 
 						// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
 						strncpy(currentNode->value.value.string, tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
@@ -680,8 +661,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 
 					// 演算子(オペレーターを読み込みます。
-					Operator middleOperator =(Operator){ .kind = TokenKind::NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
-
+					//Operator middleOperator =(Operator){ .kind = TokenKind::NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
+					Operator middleOperator;
 					// 現在見ている演算子の情報を探します。
 					found = false;
 					for (int j = 0; j < sizeof(operators) / sizeof(operators[0]); ++j){
@@ -853,7 +834,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					if (!row[columnNum]){
 						throw ResultValue::ERR_MEMORY_ALLOCATE;
 					}
-					*row[columnNum] = (Data){ DataType::STRING, { "" } };
+					*row[columnNum] = Data("");
 					char *writeCursol = row[columnNum++]->value.string; // データ文字列の書き込みに利用するカーソルです。
 
 					// データ文字列を一つ読みます。
@@ -902,7 +883,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				if (!found){
 					currentRow = inputData[i];
 					while (*currentRow){
-						*(*currentRow)[j] = (Data){ .type = DataType::INTEGER, .value = { .integer = atoi((*currentRow)[j]->value.string) } };
+						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->value.string));
 						++currentRow;
 					}
 				}
