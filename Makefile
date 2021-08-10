@@ -1,8 +1,8 @@
 CFLAGS=-std=c++14 -Wall
 LDFLAGS=-pthread -lgtest_main -lgtest
 
-test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o
-	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o $(CFLAGS) $(LDFLAGS)
+test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o
+	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o $(CFLAGS) $(LDFLAGS)
 	./testExecuteSQL
 
 #testExecuteSQL.o: testExecuteSQL.cpp
@@ -26,6 +26,9 @@ column.o: column.cpp column.hpp
 
 extension_tree_node.o: extension_tree_node.cpp extension_tree_node.hpp
 	g++ -c extension_tree_node.cpp
+
+column_index.o: column_index.cpp column_index.hpp
+	g++ -c column_index.cpp
 clean:
 	rm *.o
 
