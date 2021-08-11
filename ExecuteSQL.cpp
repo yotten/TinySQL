@@ -141,7 +141,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	const char *signNum = "+-0123456789"; // 全ての符号と数字です。
 	const char *num = "0123456789"; // 全ての数字です。
 	const char* space = " \t\r\n"; // 全ての空白文字です。
-
+	
 	// inputDataを初期化します。
 	for (size_t i = 0; i < sizeof(inputData) / sizeof(inputData[0]); i++)
 	{
@@ -210,7 +210,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	const char* charactorCursol = sql; // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 	vector<string> tableNames;
 
-	int selectColumnsNum = 0; // SELECT句から現在読み込まれた列名の数です。
 	TokenKind orders[MAX_COLUMN_COUNT] = { TokenKind::NOT_TOKEN }; // 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
 	int outputRowsNum = 0; // 出力データの現在の行数です。
 	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
