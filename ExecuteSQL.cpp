@@ -878,15 +878,15 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		ColumnIndex selectColumnIndexes[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // SELECT句で指定された列の、入力ファイルとしてのインデックスです。
 		for (auto &selectColumn : selectColumns) {
 			found = false;
-			for (int j = 0; j < tableNames.size(); ++j){
-				for (int k = 0; k < inputColumnNums[j]; ++k){
+			for (int i = 0; i < tableNames.size(); ++i){
+				for (int j = 0; j < inputColumnNums[i]; ++j){
 					char* selectTableNameCursol = selectColumn.tableName;
-					char* inputTableNameCursol = inputColumns[j][k].tableName;
+					char* inputTableNameCursol = inputColumns[i][j].tableName;
 					while (*selectTableNameCursol && toupper(*selectTableNameCursol) == toupper(*inputTableNameCursol++)){
 						++selectTableNameCursol;
 					}
 					char* selectColumnNameCursol = selectColumn.columnName;
-					char* inputColumnNameCursol = inputColumns[j][k].columnName;
+					char* inputColumnNameCursol = inputColumns[i][j].columnName;
 					while (*selectColumnNameCursol && toupper(*selectColumnNameCursol) == toupper(*inputColumnNameCursol++)){
 						++selectColumnNameCursol;
 					}
@@ -903,7 +903,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						if (MAX_COLUMN_COUNT <= selectColumnIndexesNum){
 							throw ResultValue::ERR_MEMORY_OVER;
 						}
-						selectColumnIndexes[selectColumnIndexesNum++] = (ColumnIndex){ .table = j, .column = k };
+						selectColumnIndexes[selectColumnIndexesNum++] = (ColumnIndex){ .table = i, .column = j };
 					}
 				}
 			}
