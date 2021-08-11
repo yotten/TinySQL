@@ -210,7 +210,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	const char* charactorCursol = sql; // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 	vector<string> tableNames;
 
-	int tableNamesNum = 0; // 現在読み込まれているテーブル名の数です。
 	int selectColumnsNum = 0; // SELECT句から現在読み込まれた列名の数です。
 	TokenKind orders[MAX_COLUMN_COUNT] = { TokenKind::NOT_TOKEN }; // 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
 	int outputRowsNum = 0; // 出力データの現在の行数です。
@@ -713,10 +712,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				++tokenCursol;
 			}
 			if (tokenCursol->kind == TokenKind::IDENTIFIER){
-				if (MAX_TABLE_COUNT <= tableNamesNum){
-					throw ResultValue::ERR_MEMORY_OVER;
-				}
-
 				tableNames.push_back(tokenCursol->word);
 				++tokenCursol;
 			}
