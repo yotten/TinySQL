@@ -389,13 +389,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// トークン列を解析し、構文を読み取ります。
 		tokenCursol = &tokens[0];
 		vector<Column> selectColumns; // SELECT句に指定された列名です。
-
-		Column orderByColumns[MAX_COLUMN_COUNT]; // ORDER句に指定された列名です。
-		// orderByColumnsを初期化します。
-		for (size_t i = 0; i < sizeof(orderByColumns) / sizeof(orderByColumns[0]); i++)
-		{
-			orderByColumns[i] = (Column){ "", "" };
-		}
+		vector<Column> orderByColumns; // ORDER句に指定された列名です。
 
 		ExtensionTreeNode whereExtensionNodes[MAX_EXTENSION_TREE_NODE_COUNT]; // WHEREに指定された木のノードを、木構造とは無関係に格納します。
 		// whereExtensionNodesを初期化します。
@@ -471,20 +465,14 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 							++tokenCursol;
 						}
 						if (tokenCursol->kind == TokenKind::IDENTIFIER){
-							if (MAX_COLUMN_COUNT <= orderByColumnsNum){
-								throw ResultValue::ERR_MEMORY_OVER;
-							}
 							// テーブル名が指定されていない場合と仮定して読み込みます。
-							strncpy(orderByColumns[orderByColumnsNum].tableName, "", MAX_WORD_LENGTH);
-							strncpy(orderByColumns[orderByColumnsNum].columnName, tokenCursol->word, MAX_WORD_LENGTH);
+							orderByColumns.push_back(Column(tokenCursol->word));
 							++tokenCursol;
 							if (tokenCursol->kind == TokenKind::DOT){
 								++tokenCursol;
-								if (tokenCursol->kind == TokenKind::IDENTIFIER){
-
+								if (tokenCursol->kind == TokenKind::IDENTIFIER) {
 									// テーブル名が指定されていることがわかったので読み替えます。
-									strncpy(orderByColumns[orderByColumnsNum].tableName, orderByColumns[orderByColumnsNum].columnName, MAX_WORD_LENGTH);
-									strncpy(orderByColumns[orderByColumnsNum].columnName, tokenCursol->word, MAX_WORD_LENGTH);
+									orderByColumns.back() = Column(orderByColumns.back().columnName, tokenCursol->word);
 									++tokenCursol;
 								}
 								else{
@@ -493,17 +481,17 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 							}
 
 							// 並び替えの昇順、降順を指定します。
-							if (tokenCursol->kind == TokenKind::ASC){
-								orders[orderByColumnsNum] = TokenKind::ASC;
+							if (tokenCursol->kind == TokenKind::ASC) {
+								orders[orderByColumns.size() - 1] = TokenKind::ASC;
 								++tokenCursol;
 							}
-							else if (tokenCursol->kind == TokenKind::DESC){
-								orders[orderByColumnsNum] = TokenKind::DESC;
+							else if (tokenCursol->kind == TokenKind::DESC) {
+								orders[orderByColumns.size() - 1] = TokenKind::DESC;
 								++tokenCursol;
 							}
-							else{
+							else {
 								// 指定がない場合は昇順となります。
-								orders[orderByColumnsNum] = TokenKind::ASC;
+								orders[orderByColumns.size() - 1] = TokenKind::ASC;
 							}
 							++orderByColumnsNum;
 						}
@@ -1181,27 +1169,28 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 
 		// ORDER句による並び替えの処理を行います。
-		if (orderByColumnsNum){
+		if (!orderByColumns.empty()){
 			// ORDER句で指定されている列が、全ての入力行の中のどの行なのかを計算します。
 			int orderByColumnIndexes[MAX_COLUMN_COUNT]; // ORDER句で指定された列の、すべての行の中でのインデックスです。
 			int orderByColumnIndexesNum = 0; // 現在のorderByColumnIndexesの数です。
-			for (int i = 0; i < orderByColumnsNum; ++i){
+			//for (int i = 0; i < orderByColumnsNum; ++i){
+			for (auto &orderByColumn : orderByColumns) {
 				found = false;
 				for (int j = 0; j < allInputColumnsNum; ++j){
-					char* orderByTableNameCursol = orderByColumns[i].tableName;
+					char* orderByTableNameCursol = orderByColumn.tableName;
 					char* allInputTableNameCursol = allInputColumns[j].tableName;
 					while (*orderByTableNameCursol && toupper(*orderByTableNameCursol) == toupper(*allInputTableNameCursol)){
 						++orderByTableNameCursol;
 						++allInputTableNameCursol;
 					}
-					char* orderByColumnNameCursol = orderByColumns[i].columnName;
+					char* orderByColumnNameCursol = orderByColumn.columnName;
 					char* allInputColumnNameCursol = allInputColumns[j].columnName;
 					while (*orderByColumnNameCursol && toupper(*orderByColumnNameCursol) == toupper(*allInputColumnNameCursol)){
 						++orderByColumnNameCursol;
 						++allInputColumnNameCursol;
 					}
 					if (!*orderByColumnNameCursol && !*allInputColumnNameCursol &&
-						(!*orderByColumns[i].tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+						(!*orderByColumn.tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 						!*orderByTableNameCursol && !*allInputTableNameCursol)){
 						// 既に見つかっているのにもう一つ見つかったらエラーです。
 						if (found){
