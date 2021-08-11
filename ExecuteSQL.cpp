@@ -1176,15 +1176,15 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			//for (int i = 0; i < orderByColumnsNum; ++i){
 			for (auto &orderByColumn : orderByColumns) {
 				found = false;
-				for (int j = 0; j < allInputColumnsNum; ++j){
+				for (int i = 0; i < allInputColumnsNum; ++i){
 					char* orderByTableNameCursol = orderByColumn.tableName;
-					char* allInputTableNameCursol = allInputColumns[j].tableName;
+					char* allInputTableNameCursol = allInputColumns[i].tableName;
 					while (*orderByTableNameCursol && toupper(*orderByTableNameCursol) == toupper(*allInputTableNameCursol)){
 						++orderByTableNameCursol;
 						++allInputTableNameCursol;
 					}
 					char* orderByColumnNameCursol = orderByColumn.columnName;
-					char* allInputColumnNameCursol = allInputColumns[j].columnName;
+					char* allInputColumnNameCursol = allInputColumns[i].columnName;
 					while (*orderByColumnNameCursol && toupper(*orderByColumnNameCursol) == toupper(*allInputColumnNameCursol)){
 						++orderByColumnNameCursol;
 						++allInputColumnNameCursol;
@@ -1200,7 +1200,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						if (MAX_COLUMN_COUNT <= orderByColumnIndexesNum){
 							throw ResultValue::ERR_MEMORY_OVER;
 						}
-						orderByColumnIndexes[orderByColumnIndexesNum++] = j;
+						orderByColumnIndexes[orderByColumnIndexesNum++] = i;
 					}
 				}
 				// 一つも見つからなくてもエラーです。
