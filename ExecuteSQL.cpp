@@ -210,7 +210,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	const char* charactorCursol = sql; // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 	vector<string> tableNames;
 
-	TokenKind orders[MAX_COLUMN_COUNT] = { TokenKind::NOT_TOKEN }; // 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
+	vector<TokenKind> orders;
 	int outputRowsNum = 0; // 出力データの現在の行数です。
 	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
 	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
@@ -482,16 +482,16 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 							// 並び替えの昇順、降順を指定します。
 							if (tokenCursol->kind == TokenKind::ASC) {
-								orders[orderByColumns.size() - 1] = TokenKind::ASC;
+								orders.push_back(TokenKind::ASC);
 								++tokenCursol;
 							}
 							else if (tokenCursol->kind == TokenKind::DESC) {
-								orders[orderByColumns.size() - 1] = TokenKind::DESC;
+								orders.push_back(TokenKind::DESC);
 								++tokenCursol;
 							}
 							else {
 								// 指定がない場合は昇順となります。
-								orders[orderByColumns.size() - 1] = TokenKind::ASC;
+								orders.push_back(TokenKind::ASC);
 							}
 							++orderByColumnsNum;
 						}
