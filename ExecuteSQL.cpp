@@ -818,24 +818,19 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 		}
 
-		Column allInputColumns[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // 入力に含まれるすべての列の一覧です。
-		// allInputColumnsを初期化します。
-		for (size_t i = 0; i < sizeof(allInputColumns) / sizeof(allInputColumns[0]); i++)
-		{
-			allInputColumns[i] = (Column){ "", "" };
-		}
+		vector<Column> allInputColumns; // 入力に含まれるすべての列の一覧です。
 
 		// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 		for (size_t i = 0; i < tableNames.size(); ++i){
 			for (auto &inputColumn : inputColumns[i]) {
-				allInputColumns[allInputColumnsNum++] = Column(tableNames[i].c_str(), inputColumn.columnName);
+				allInputColumns.push_back(Column(tableNames[i].c_str(), inputColumn.columnName));
 			}
 		}
 
 		// SELECT句の列名指定が*だった場合は、入力CSVの列名がすべて選択されます。
 		if (selectColumns.empty()){
-			for (int i = 0; i < allInputColumnsNum; ++i){
-				selectColumns.push_back(allInputColumns[i]);
+			for (auto &allInputColumn : allInputColumns) {
+				selectColumns.push_back(allInputColumn);
 			}
 		}
 
@@ -970,7 +965,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						// データが列名で指定されている場合、今扱っている行のデータを設定します。
 						if (*currentNode->column.columnName){
 							found = false;
-							for (int i = 0; i < allInputColumnsNum; ++i){
+							for (size_t i = 0; i < allInputColumns.size(); ++i){
 								char* whereTableNameCursol = currentNode->column.tableName;
 								char* allInputTableNameCursol = allInputColumns[i].tableName;
 								while (*whereTableNameCursol && toupper(*whereTableNameCursol) == toupper(*allInputTableNameCursol++)){
@@ -1155,10 +1150,10 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			// ORDER句で指定されている列が、全ての入力行の中のどの行なのかを計算します。
 			int orderByColumnIndexes[MAX_COLUMN_COUNT]; // ORDER句で指定された列の、すべての行の中でのインデックスです。
 			int orderByColumnIndexesNum = 0; // 現在のorderByColumnIndexesの数です。
-			//for (int i = 0; i < orderByColumnsNum; ++i){
+
 			for (auto &orderByColumn : orderByColumns) {
 				found = false;
-				for (int i = 0; i < allInputColumnsNum; ++i){
+				for (size_t i = 0; i < allInputColumns.size(); ++i){
 					char* orderByTableNameCursol = orderByColumn.tableName;
 					char* allInputTableNameCursol = allInputColumns[i].tableName;
 					while (*orderByTableNameCursol && toupper(*orderByTableNameCursol) == toupper(*allInputTableNameCursol)){
