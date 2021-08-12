@@ -12,6 +12,7 @@
 #include <cstring>
 #include <algorithm>
 #include <vector>
+#include <list>
 #include <string>
 
 #include "ExecuteSQL.hpp"
@@ -215,7 +216,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
 	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
 	Data ***currentRows[MAX_TABLE_COUNT] = { nullptr }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
-	int whereExtensionNodesNum = 0; // 現在読み込まれているのwhereExtensionNodesの数です。
 	ExtensionTreeNode *whereTopNode = nullptr; // 式木の根となるノードです。
 	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
 	int outputColumnNum = 0; // 出力するすべての行の現在の数です。
@@ -390,13 +390,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		tokenCursol = &tokens[0];
 		vector<Column> selectColumns; // SELECT句に指定された列名です。
 		vector<Column> orderByColumns; // ORDER句に指定された列名です。
-
-		ExtensionTreeNode whereExtensionNodes[MAX_EXTENSION_TREE_NODE_COUNT]; // WHEREに指定された木のノードを、木構造とは無関係に格納します。
-		// whereExtensionNodesを初期化します。
-		for (size_t i = 0; i < sizeof(whereExtensionNodes) / sizeof(whereExtensionNodes[0]); i++)
-		{
-			whereExtensionNodes[i] = ExtensionTreeNode();
-		}
+		list<ExtensionTreeNode> whereExtensionNodes;
 
 		// SQLの構文を解析し、必要な情報を取得します。
 
@@ -515,18 +509,16 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					// オペランドを読み込みます。
 
 					// オペランドのノードを新しく生成します。
-					if (MAX_EXTENSION_TREE_NODE_COUNT <= whereExtensionNodesNum){
-						throw ResultValue::ERR_MEMORY_OVER;
-					}
+					whereExtensionNodes.push_back(ExtensionTreeNode());
 					if (currentNode){
 						// 現在のノードを右の子にずらし、元の位置に新しいノードを挿入します。
-						currentNode->right = &whereExtensionNodes[whereExtensionNodesNum++];
+						currentNode->right = &whereExtensionNodes.back();
 						currentNode->right->parent = currentNode;
 						currentNode = currentNode->right;
 					}
 					else{
 						// 最初はカレントノードに新しいノードを入れます。
-						currentNode = &whereExtensionNodes[whereExtensionNodesNum++];
+						currentNode = &whereExtensionNodes.back();
 					}
 
 					// カッコ開くを読み込みます。
@@ -644,10 +636,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						} while (!searched && tmp->parent && (tmp->parent->middleOperator.order <= middleOperator.order || tmp->parent->inParen));
 
 						// 演算子のノードを新しく生成します。
-						if (MAX_EXTENSION_TREE_NODE_COUNT <= whereExtensionNodesNum){
-							throw ResultValue::ERR_MEMORY_OVER;
-						}
-						currentNode = &whereExtensionNodes[whereExtensionNodesNum++];
+						whereExtensionNodes.push_back(ExtensionTreeNode());
+						currentNode = &whereExtensionNodes.back();
 						currentNode->middleOperator = middleOperator;
 
 						// 見つかった場所に新しいノードを配置します。これまでその位置にあったノードは左の子となるよう、親ノードと子ノードのポインタをつけかえます。
@@ -908,11 +898,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		if (whereTopNode){
 			// 既存数値の符号を計算します。
-			for (int i = 0; i < whereExtensionNodesNum; ++i){
-				if (whereExtensionNodes[i].middleOperator.kind == TokenKind::NOT_TOKEN &&
-					!*whereExtensionNodes[i].column.columnName &&
-					whereExtensionNodes[i].value.type == DataType::INTEGER){
-					whereExtensionNodes[i].value.value.integer *= whereExtensionNodes[i].signCoefficient;
+			for (auto &whereExtensionNode : whereExtensionNodes) {
+				if (whereExtensionNode.middleOperator.kind == TokenKind::NOT_TOKEN &&
+					!*whereExtensionNode.column.columnName &&
+					whereExtensionNode.value.type == DataType::INTEGER) {
+					whereExtensionNode.value.value.integer *= whereExtensionNode.signCoefficient;
 				}
 			}
 		}
@@ -1146,8 +1136,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					outputData[outputRowsNum] = nullptr;
 				}
 				// WHERE条件の計算結果をリセットします。
-				for (int i = 0; i < whereExtensionNodesNum; ++i){
-					whereExtensionNodes[i].calculated = false;
+				for (auto &whereExtensionNode : whereExtensionNodes) {
+					whereExtensionNode.calculated = false;
 				}
 			}
 
