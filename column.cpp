@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cstring>
-
+    
 using namespace std;
 
 //! Columnクラスの新しいインスタンスを初期化します。
