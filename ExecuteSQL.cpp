@@ -133,7 +133,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
 	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
 	Data ***currentRow = nullptr;                              // データ検索時に現在見ている行を表します。
-	Data **inputData[MAX_TABLE_COUNT][MAX_ROW_COUNT];       // 入力データです。
+	vector<vector<Data**>> inputData;     					  // 入力データです。
 	Data **outputData[MAX_ROW_COUNT] = { nullptr };            // 出力データです。
 	Data **allColumnOutputData[MAX_ROW_COUNT] = { nullptr };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
@@ -142,14 +142,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	const char *signNum = "+-0123456789"; // 全ての符号と数字です。
 	const char *num = "0123456789"; // 全ての数字です。
 	const char* space = " \t\r\n"; // 全ての空白文字です。
-	
-	// inputDataを初期化します。
-	for (size_t i = 0; i < sizeof(inputData) / sizeof(inputData[0]); i++)
-	{
-		for (size_t j = 0; j < sizeof(inputData[0]) / sizeof(inputData[0][0]); j++){
-			inputData[i][j] = nullptr;
-		}
-	}
 
 	// SQLからトークンを読み込みます。
 
@@ -734,14 +726,12 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 			// 入力CSVのデータ行を読み込みます。
 			int rowNum = 0;
+			inputData.push_back(vector<Data**>());
+
 			while (fgets(inputLine, MAX_FILE_LINE_LENGTH, inputTableFiles.back())) {
-				if (MAX_ROW_COUNT <= rowNum){
-					throw ResultValue::ERR_MEMORY_OVER;
-				}
-				Data **row = inputData[i][rowNum++] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 入力されている一行分のデータです。
-				if (!row){
-					throw ResultValue::ERR_MEMORY_ALLOCATE;
-				}
+				inputData[i].push_back((Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*))); // 入力されている一行分のデータです。
+				Data **row = inputData[i].back();
+
 				// 生成した行を初期化します。
 				for (int j = 0; j < MAX_COLUMN_COUNT; ++j){
 					row[j] = nullptr;
@@ -776,11 +766,14 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				}
 			}
 
+			// 番兵となるnullptrを登録します。
+			inputData[i].push_back(nullptr);
+
 			// 全てが数値となる列は数値列に変換します。
 			for (size_t j = 0; j <inputColumns[i].size(); ++j) {
 
 				// 全ての行のある列について、データ文字列から符号と数値以外の文字を探します。
-				currentRow = inputData[i];
+				currentRow = &inputData[i][0];
 				found = false;
 				while (*currentRow){
 					char *currentChar = (*currentRow)[j]->value.string;
@@ -808,7 +801,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 				// 符号と数字以外が見つからない列については、数値列に変換します。
 				if (!found){
-					currentRow = inputData[i];
+					currentRow = &inputData[i][0];
 					while (*currentRow){
 						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->value.string));
 						++currentRow;
@@ -894,7 +887,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		for (size_t i = 0; i < tableNames.size(); ++i){
 			// 各テーブルの先頭行を設定します。
-			currentRows[i] = inputData[i];
+			currentRows[i] = &inputData[i][0];
 		}
 
 		// 出力するデータを設定します。
@@ -1134,7 +1127,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			// 最後のテーブルが最終行になっていた場合は先頭に戻し、順に前のテーブルのカレント行をインクリメントします。
 			for (int i = tableNames.size() - 1; !*currentRows[i] && 0 < i; --i){
 				++currentRows[i - 1];
-				currentRows[i] = inputData[i];
+				currentRows[i] = &inputData[i][0];
 			}
 
 			// 最初のテーブルが最後の行を超えたなら出力行の生成は終わりです。
@@ -1305,8 +1298,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 
 		// メモリリソースを解放します。
-		for (size_t i = 0; i < tableNames.size(); ++i){
-			currentRow = inputData[i];
+		for (auto& inputTableData : inputData){
+			if (inputTableData.empty()){
+				continue;
+			}
+			currentRow = &inputTableData[0];
 			while (*currentRow){
 				Data **dataCursol = *currentRow;
 				while (*dataCursol){
@@ -1349,8 +1345,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 
 		// メモリリソースを解放します。
-		for (size_t i = 0; i < tableNames.size(); ++i){
-			currentRow = inputData[i];
+		for (auto& inputTableData : inputData){
+			if (inputTableData.empty()){
+				continue;
+			}
+			currentRow = &inputTableData[0];
 			while (*currentRow){
 				Data **dataCursol = *currentRow;
 				while (*dataCursol){
