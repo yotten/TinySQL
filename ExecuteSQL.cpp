@@ -1146,8 +1146,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// ORDER句による並び替えの処理を行います。
 		if (!orderByColumns.empty()){
 			// ORDER句で指定されている列が、全ての入力行の中のどの行なのかを計算します。
-			int orderByColumnIndexes[MAX_COLUMN_COUNT]; // ORDER句で指定された列の、すべての行の中でのインデックスです。
-			int orderByColumnIndexesNum = 0; // 現在のorderByColumnIndexesの数です。
+			vector<int> orderByColumnIndexes; // ORDER句で指定された列の、すべての行の中でのインデックスです。
 
 			for (auto &orderByColumn : orderByColumns) {
 				found = false;
@@ -1172,10 +1171,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 							throw ResultValue::ERR_BAD_COLUMN_NAME;
 						}
 						found = true;
-						if (MAX_COLUMN_COUNT <= orderByColumnIndexesNum){
-							throw ResultValue::ERR_MEMORY_OVER;
-						}
-						orderByColumnIndexes[orderByColumnIndexesNum++] = i;
+						orderByColumnIndexes.push_back(i);
 					}
 				}
 				// 一つも見つからなくてもエラーです。
@@ -1189,7 +1185,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				int minIndex = i; // 現在までで最小の行のインデックスです。
 				for (int j = i + 1; j < outputRowsNum; ++j){
 					bool jLessThanMin = false; // インデックスがjの値が、minIndexの値より小さいかどうかです。
-					for (int k = 0; k < orderByColumnIndexesNum; ++k){
+					for (size_t k = 0; k < orderByColumnIndexes.size(); ++k){
 						Data *mData = allColumnOutputData[minIndex][orderByColumnIndexes[k]]; // インデックスがminIndexのデータです。
 						Data *jData = allColumnOutputData[j][orderByColumnIndexes[k]]; // インデックスがjのデータです。
 						int cmp = 0; // 比較結果です。等しければ0、インデックスjの行が大きければプラス、インデックスminIndexの行が大きければマイナスとなります。
