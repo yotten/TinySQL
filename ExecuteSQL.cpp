@@ -865,7 +865,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						if (MAX_COLUMN_COUNT <= selectColumnIndexesNum){
 							throw ResultValue::ERR_MEMORY_OVER;
 						}
-						selectColumnIndexes[selectColumnIndexesNum++] = (ColumnIndex){ .table = i, .column = j };
+						selectColumnIndexes[selectColumnIndexesNum++] = ColumnIndex(i, j);
 					}
 					++j;
 				}
