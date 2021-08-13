@@ -218,7 +218,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	Data ***currentRows[MAX_TABLE_COUNT] = { nullptr }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	ExtensionTreeNode *whereTopNode = nullptr; // 式木の根となるノードです。
 	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
-	int outputColumnNum = 0; // 出力するすべての行の現在の数です。
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
 	int selectColumnIndexesNum = 0; // selectColumnIndexesの現在の数。
 	Token *tokenCursol; 	// 現在見ているトークンを指します。
@@ -834,7 +833,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 		}
 
-		Column outputColumns[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // 出力するすべての行の情報です。
+		vector<Column> outputColumns;
 
 		// SELECT句で指定された列名が、何個目の入力ファイルの何列目に相当するかを判別します。
 		ColumnIndex selectColumnIndexes[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // SELECT句で指定された列の、入力ファイルとしてのインデックスです。
@@ -879,8 +878,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 出力する列名を設定します。
 		for (size_t i = 0; i < selectColumns.size(); ++i){
-			outputColumns[outputColumnNum] = inputColumns[selectColumnIndexes[i].table][selectColumnIndexes[i].column];
-			++outputColumnNum;
+			outputColumns.push_back(inputColumns[selectColumnIndexes[i].table][selectColumnIndexes[i].column]);
 		}
 
 		if (whereTopNode){
