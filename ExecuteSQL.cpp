@@ -135,8 +135,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	vector<vector<Data**>> inputData;     					  // 入力データです。
 	//Data **outputData[MAX_ROW_COUNT] = { nullptr };            // 出力データです。
 	vector<Data**> outputData;									// 出力データです。
-	Data **allColumnOutputData[MAX_ROW_COUNT] = { nullptr };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
-
+	vector<Data**> allColumnOutputData;						// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 	const char *alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
 	const char *alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
 	const char *signNum = "+-0123456789"; // 全ての符号と数字です。
@@ -914,7 +913,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				*row[i] = *(*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 			}
 
-			Data **allColumnsRow = allColumnOutputData[outputData.size() - 1] = (Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
+			//Data **allColumnsRow = allColumnOutputData[outputData.size() - 1] = (Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
+			allColumnOutputData.push_back((Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)));
+			Data **allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 			if (!allColumnsRow){
 				throw ResultValue::ERR_MEMORY_ALLOCATE;
 			}
@@ -1110,9 +1111,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				if (!whereTopNode->value.value.boolean){
 					free(row);
 					free(allColumnsRow);
-					// allColumnOutputData[--outputRowsNum] = nullptr;
-					// outputData[outputRowsNum] = nullptr;
-					allColumnOutputData[outputData.size() - 1] = nullptr;
+					allColumnOutputData.pop_back();
 					outputData.pop_back();
 				}
 				// WHERE条件の計算結果をリセットします。
@@ -1140,6 +1139,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 番兵となるnullptrを登録します。
 		outputData.push_back(nullptr);
+		allColumnOutputData.push_back(nullptr);
 
 		// ORDER句による並び替えの処理を行います。
 		if (!orderByColumns.empty()){
@@ -1317,11 +1317,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				currentRow++;
 			}
 		}
-		// currentRow = outputData;
-		// while (*currentRow){
-		// 	Data **dataCursol = *currentRow;
-		// 	while (*dataCursol){
-		// 		free(*dataCursol++);
+
 		if (!outputData.empty()){
 			currentRow = &outputData[0];
 			while (*currentRow){
@@ -1333,7 +1329,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				currentRow++;
 			}
 		}
-		currentRow = allColumnOutputData;
+		currentRow = &allColumnOutputData[0];
 		while (*currentRow){
 			Data **dataCursol = *currentRow;
 			while (*dataCursol){
@@ -1383,14 +1379,17 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				currentRow++;
 			}
 		}
-		currentRow = allColumnOutputData;
-		while (*currentRow){
-			Data **dataCursol = *currentRow;
-			while (*dataCursol){
-				free(*dataCursol++);
+
+		if (!allColumnOutputData.empty()){
+			currentRow = &allColumnOutputData[0];
+			while (*currentRow && currentRow - &allColumnOutputData[0] < (int)allColumnOutputData.size()){
+				Data **dataCursol = *currentRow;
+				while (*dataCursol){
+					free(*dataCursol++);
+				}
+				free(*currentRow);
+				currentRow++;
 			}
-			free(*currentRow);
-			currentRow++;
 		}
 		return  static_cast<int>(error);
 	}
