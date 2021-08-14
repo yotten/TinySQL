@@ -507,7 +507,7 @@ TEST_F(MyTest, TestNo29) { //ExecuteSQLはSELECTで指定したテーブル名�
 
     ASSERT_EQ((int)ERR_BAD_COLUMN_NAME, result);
 }
-TEST_F(MyTest, TestNo30) { //ExecuteSQLはSELECTで指定したテーブル名の指定の最終文字の違いを見分けます。)
+TEST_F(MyTest, DISABLED_TestNo30) { //ExecuteSQLはSELECTで指定したテーブル名の指定の最終文字の違いを見分けます。)
     const char* sql =
         "SELECT TABLE2.Integer "
         "FROM TABLE1";
