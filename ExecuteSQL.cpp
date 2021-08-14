@@ -134,7 +134,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
 	Data ***currentRow = nullptr;                              // データ検索時に現在見ている行を表します。
 	vector<vector<Data**>> inputData;     					  // 入力データです。
-	Data **outputData[MAX_ROW_COUNT] = { nullptr };            // 出力データです。
+	//Data **outputData[MAX_ROW_COUNT] = { nullptr };            // 出力データです。
+	vector<Data**> outputData;									// 出力データです。
 	Data **allColumnOutputData[MAX_ROW_COUNT] = { nullptr };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
 	const char *alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
@@ -204,7 +205,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	vector<string> tableNames;
 
 	vector<TokenKind> orders;
-	int outputRowsNum = 0; // 出力データの現在の行数です。
 	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
 	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
 	Data ***currentRows[MAX_TABLE_COUNT] = { nullptr }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
@@ -892,10 +892,12 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 出力するデータを設定します。
 		while (true){
-			if (MAX_ROW_COUNT <= outputRowsNum){
-				throw ResultValue::ERR_MEMORY_OVER;
-			}
-			Data **row = outputData[outputRowsNum] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
+			// if (MAX_ROW_COUNT <= outputRowsNum){
+			// 	throw ResultValue::ERR_MEMORY_OVER;
+			// }
+			// Data **row = outputData[outputRowsNum] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
+			outputData.push_back((Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)));
+			Data **row = outputData.back(); // 出力している一行分のデータです。
 			if (!row){
 				throw ResultValue::ERR_MEMORY_ALLOCATE;
 			}
@@ -914,7 +916,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				*row[i] = *(*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 			}
 
-			Data **allColumnsRow = allColumnOutputData[outputRowsNum++] = (Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
+			Data **allColumnsRow = allColumnOutputData[outputData.size() - 1] = (Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 			if (!allColumnsRow){
 				throw ResultValue::ERR_MEMORY_ALLOCATE;
 			}
@@ -1110,8 +1112,10 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				if (!whereTopNode->value.value.boolean){
 					free(row);
 					free(allColumnsRow);
-					allColumnOutputData[--outputRowsNum] = nullptr;
-					outputData[outputRowsNum] = nullptr;
+					// allColumnOutputData[--outputRowsNum] = nullptr;
+					// outputData[outputRowsNum] = nullptr;
+					allColumnOutputData[outputData.size() - 1] = nullptr;
+					outputData.pop_back();
 				}
 				// WHERE条件の計算結果をリセットします。
 				for (auto &whereExtensionNode : whereExtensionNodes) {
@@ -1135,6 +1139,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				break;
 			}
 		}
+
+		// 番兵となるnullptrを登録します。
+		outputData.push_back(nullptr);
 
 		// ORDER句による並び替えの処理を行います。
 		if (!orderByColumns.empty()){
@@ -1174,9 +1181,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 
 			// outputDataとallColumnOutputDataのソートを一緒に行います。簡便のため凝ったソートは使わず、選択ソートを利用します。
-			for (int i = 0; i < outputRowsNum; ++i){
+			for (size_t i = 0; i < outputData.size() -1; ++i){
 				int minIndex = i; // 現在までで最小の行のインデックスです。
-				for (int j = i + 1; j < outputRowsNum; ++j){
+				for (size_t j = i + 1; j < outputData.size() - 1; ++j){
 					bool jLessThanMin = false; // インデックスがjの値が、minIndexの値より小さいかどうかです。
 					for (size_t k = 0; k < orderByColumnIndexes.size(); ++k){
 						Data *mData = allColumnOutputData[minIndex][orderByColumnIndexes[k]]; // インデックスがminIndexのデータです。
@@ -1245,7 +1252,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 
 		// 出力ファイルにデータを出力します。
-		currentRow = outputData;
+		currentRow = &outputData[0];
 		while (*currentRow){
 			Data **column = *currentRow;
 			for (int i = 0; i < selectColumns.size(); ++i){
@@ -1312,14 +1319,21 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				currentRow++;
 			}
 		}
-		currentRow = outputData;
-		while (*currentRow){
-			Data **dataCursol = *currentRow;
-			while (*dataCursol){
-				free(*dataCursol++);
+		// currentRow = outputData;
+		// while (*currentRow){
+		// 	Data **dataCursol = *currentRow;
+		// 	while (*dataCursol){
+		// 		free(*dataCursol++);
+		if (!outputData.empty()){
+			currentRow = &outputData[0];
+			while (*currentRow){
+				Data **dataCursol = *currentRow;
+				while (*dataCursol){
+					free(*dataCursol++);
+				}
+				free(*currentRow);
+				currentRow++;
 			}
-			free(*currentRow);
-			currentRow++;
 		}
 		currentRow = allColumnOutputData;
 		while (*currentRow){
@@ -1359,14 +1373,21 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				currentRow++;
 			}
 		}
-		currentRow = outputData;
-		while (*currentRow){
-			Data **dataCursol = *currentRow;
-			while (*dataCursol){
-				free(*dataCursol++);
+		// currentRow = outputData;
+		// while (*currentRow){
+		// 	Data **dataCursol = *currentRow;
+		// 	while (*dataCursol){
+		// 		free(*dataCursol++);
+		if (!outputData.empty()){
+			currentRow = &outputData[0];
+			while (*currentRow && currentRow && currentRow - &outputData[0] < (int)outputData.size()){
+				Data **dataCursol = *currentRow;
+				while (*dataCursol){
+					free(*dataCursol++);
+				}
+				free(*currentRow);
+				currentRow++;
 			}
-			free(*currentRow);
-			currentRow++;
 		}
 		currentRow = allColumnOutputData;
 		while (*currentRow){
