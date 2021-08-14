@@ -138,7 +138,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	vector<Data**> allColumnOutputData;						// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 	const string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
 	const string alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
-	const char *signNum = "+-0123456789"; // 全ての符号と数字です。
+	const string signNum = "+-0123456789"; // 全ての符号と数字です。
 	const char *num = "0123456789"; // 全ての数字です。
 	const char* space = " \t\r\n"; // 全ての空白文字です。
 
@@ -777,7 +777,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					char *currentChar = (*currentRow)[j]->value.string;
 					while (*currentChar){
 						bool isNum = false;
-						const char *currentNum = signNum;
+						const char *currentNum = signNum.c_str();
 						while (*currentNum){
 							if (*currentChar == *currentNum){
 								isNum = true;
