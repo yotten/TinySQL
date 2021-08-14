@@ -24,11 +24,13 @@
 #define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
 #define MAX_TABLE_COUNT 8                  //!< CSVとして入力されるテーブルの最大数です。
 
+using namespace std;
+
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
 //! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
 //! @return 実行した結果の状態です。
-int ExecuteSQL(const char*, const char*);
+int ExecuteSQL(const string, const char*);
 
 //! ExecuteSQLの戻り値の種類を表します。
 enum class ResultValue : int {
@@ -51,8 +53,6 @@ static char *itoa(int n, char *buffer, int radix)
 
 	return buffer;
 }
-
-using namespace std;
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
@@ -123,7 +123,7 @@ using namespace std;
 //! SELECT USERS.NAME, CHILDREN.NAME                                                                         @n
 //! WHERE USERS.ID = CHILDREN.PARENTID                                                                       @n
 //! FROM USERS, CHILDREN                                                                                     @n
-int ExecuteSQL(const char* sql, const char* outputFileName)
+int ExecuteSQL(const string sql, const char* outputFileName)
 {
 	enum ResultValue error = ResultValue::OK;                           // 発生したエラーの種類です。
 	vector<FILE *> inputTableFiles;								// 読み込む入力ファイルの全てのファイルポインタです。
@@ -199,7 +199,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	};
 
 	const char* charactorBackPoint = nullptr; // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
-	const char* charactorCursol = sql; // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
+	const char* charactorCursol = sql.c_str(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 	vector<string> tableNames;
 
 	vector<TokenKind> orders;

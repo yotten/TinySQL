@@ -30,6 +30,6 @@ extension_tree_node.o: extension_tree_node.cpp extension_tree_node.hpp
 column_index.o: column_index.cpp column_index.hpp
 	g++ -c column_index.cpp
 clean:
-	rm *.o
+	rm -f *.o
 
 .PHONY: test clean

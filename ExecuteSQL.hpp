@@ -1,1 +1,2 @@
-int ExecuteSQL(const char* sql, const char* outputFileName);
+#include <string>
+int ExecuteSQL(const std::string, const char*);
