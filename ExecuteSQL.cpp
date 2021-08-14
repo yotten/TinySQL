@@ -30,7 +30,7 @@ using namespace std;
 //! @param [in] sql 実行するSQLです。
 //! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
 //! @return 実行した結果の状態です。
-int ExecuteSQL(const string, const char*);
+int ExecuteSQL(const string, const string);
 
 //! ExecuteSQLの戻り値の種類を表します。
 enum class ResultValue : int {
@@ -123,7 +123,7 @@ static char *itoa(int n, char *buffer, int radix)
 //! SELECT USERS.NAME, CHILDREN.NAME                                                                         @n
 //! WHERE USERS.ID = CHILDREN.PARENTID                                                                       @n
 //! FROM USERS, CHILDREN                                                                                     @n
-int ExecuteSQL(const string sql, const char* outputFileName)
+int ExecuteSQL(const string sql, const string outputFileName)
 {
 	enum ResultValue error = ResultValue::OK;                           // 発生したエラーの種類です。
 	vector<FILE *> inputTableFiles;								// 読み込む入力ファイルの全てのファイルポインタです。
@@ -1224,7 +1224,7 @@ int ExecuteSQL(const string sql, const char* outputFileName)
 		}
 
 		// 出力ファイルを開きます。
-		outputFile = fopen(outputFileName, "w");
+		outputFile = fopen(outputFileName.c_str(), "w");
 		if (outputFile == nullptr){
 			throw ResultValue::ERR_FILE_OPEN;
 		}
