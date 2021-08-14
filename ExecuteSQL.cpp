@@ -23,7 +23,6 @@
 #define MAX_COLUMN_COUNT 16                //!< 入出力されるデータに含まれる列の最大数です。
 #define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
 #define MAX_TABLE_COUNT 8                  //!< CSVとして入力されるテーブルの最大数です。
-#define MAX_EXTENSION_TREE_NODE_COUNT 256  //!< WHERE句に指定される式木のノードの最大数です。
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
@@ -207,7 +206,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	vector<TokenKind> orders;
 	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
 	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
-	Data ***currentRows[MAX_TABLE_COUNT] = { nullptr }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
+	vector<Data ***> currentRows;// 入力された各テーブルの、現在出力している行を指すカーソルです。
 	ExtensionTreeNode *whereTopNode = nullptr; // 式木の根となるノードです。
 	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
@@ -887,7 +886,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		for (size_t i = 0; i < tableNames.size(); ++i){
 			// 各テーブルの先頭行を設定します。
-			currentRows[i] = &inputData[i][0];
+			currentRows.push_back(&inputData[i][0]);
 		}
 
 		// 出力するデータを設定します。
