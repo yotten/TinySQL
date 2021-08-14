@@ -14,7 +14,7 @@
 #include <vector>
 #include <list>
 #include <string>
-
+#include <iostream>
 #include "ExecuteSQL.hpp"
 
 #pragma warning(disable:4996)
@@ -828,7 +828,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		vector<Column> outputColumns;
 
 		// SELECT句で指定された列名が、何個目の入力ファイルの何列目に相当するかを判別します。
-		ColumnIndex selectColumnIndexes[MAX_TABLE_COUNT * MAX_COLUMN_COUNT]; // SELECT句で指定された列の、入力ファイルとしてのインデックスです。
+		vector<ColumnIndex> selectColumnIndexes; // SELECT句で指定された列の、入力ファイルとしてのインデックスです。
+		found = false;
 		for (auto &selectColumn : selectColumns) {
 			found = false;
 			for (int i = 0; i < tableNames.size(); ++i){
@@ -854,14 +855,12 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						}
 						found = true;
 						// 見つかった値を持つ列のデータを生成します。
-						if (MAX_COLUMN_COUNT <= selectColumnIndexesNum){
-							throw ResultValue::ERR_MEMORY_OVER;
-						}
-						selectColumnIndexes[selectColumnIndexesNum++] = ColumnIndex(i, j);
+						selectColumnIndexes.push_back(ColumnIndex(i, j));
 					}
 					++j;
 				}
 			}
+
 			// 一つも見つからなくてもエラーです。
 			if (!found){
 				throw ResultValue::ERR_BAD_COLUMN_NAME;
@@ -907,7 +906,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 
 			// 行の各列のデータを入力から持ってきて設定します。
-			for (int i = 0; i < selectColumnIndexesNum; ++i){
+			for (size_t i = 0; i < selectColumnIndexes.size(); ++i){
 				row[i] = (Data*)malloc(sizeof(Data));
 				if (!row[i]){
 					throw ResultValue::ERR_MEMORY_ALLOCATE;
@@ -1372,11 +1371,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				currentRow++;
 			}
 		}
-		// currentRow = outputData;
-		// while (*currentRow){
-		// 	Data **dataCursol = *currentRow;
-		// 	while (*dataCursol){
-		// 		free(*dataCursol++);
+
 		if (!outputData.empty()){
 			currentRow = &outputData[0];
 			while (*currentRow && currentRow && currentRow - &outputData[0] < (int)outputData.size()){
