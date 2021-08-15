@@ -17,7 +17,6 @@
 
 #define MAX_FILE_LINE_LENGTH 4096          //!< 読み込むファイルの一行の最大長です。
 #define MAX_COLUMN_COUNT 16                //!< 入出力されるデータに含まれる列の最大数です。
-#define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
 #define MAX_TABLE_COUNT 8                  //!< CSVとして入力されるテーブルの最大数です。
 
 using namespace std;
@@ -129,7 +128,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
 	Data ***currentRow = nullptr;                              // データ検索時に現在見ている行を表します。
 	vector<vector<Data**>> inputData;     					  // 入力データです。
-	//Data **outputData[MAX_ROW_COUNT] = { nullptr };            // 出力データです。
 	vector<Data**> outputData;									// 出力データです。
 	vector<Data**> allColumnOutputData;						// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 	const string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
@@ -290,7 +288,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			found = false;
 			for (auto & keywordCondition : keywordConditions) {
 				charactorBackPoint = charactorCursol;
-				Token condition = keywordCondition; // 確認するキーワードの条件です。
 				const char *wordCursol = keywordCondition.word;
 
 				// キーワードが指定した文字列となっているか確認します。
@@ -420,6 +417,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// ORDER句とWHERE句を読み込みます。最大各一回ずつ書くことができます。
+		readOrder = false; // すでにORDER句が読み込み済みかどうかです。
+		readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
 		while (tokenCursol->kind == TokenKind::ORDER || tokenCursol->kind == TokenKind::WHERE){
 
 			// 二度目のORDER句はエラーです。
