@@ -657,6 +657,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			throw ResultValue::ERR_SQL_SYNTAX;
 		}
 
+		first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
 		while (tokenCursol->kind == TokenKind::COMMA || first){
 			if (tokenCursol->kind == TokenKind::COMMA){
 				++tokenCursol;
@@ -682,7 +683,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 			// 入力ファイル名を生成します。
 			const string csvExtension = ".csv"; // csvの拡張子です。
-			string fileName = tableNames[i] + csvExtension; // 拡張子を含む、入力ファイルのファイル名です。
+			const string fileName = tableNames[i] + csvExtension; // 拡張子を含む、入力ファイルのファイル名です。
 
 			// 入力ファイルを開きます。
 			inputTableFiles.push_back(fopen(fileName.c_str(), "r"));
@@ -823,10 +824,9 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// SELECT句で指定された列名が、何個目の入力ファイルの何列目に相当するかを判別します。
 		vector<ColumnIndex> selectColumnIndexes; // SELECT句で指定された列の、入力ファイルとしてのインデックスです。
-		found = false;
 		for (auto &selectColumn : selectColumns) {
 			found = false;
-			for (int i = 0; i < tableNames.size(); ++i){
+			for (size_t i = 0; i < tableNames.size(); ++i){
 				int j = 0;
 				for (auto &inputColumn : inputColumns[i]) {
 					char* selectTableNameCursol = selectColumn.tableName;
@@ -1243,7 +1243,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		currentRow = &outputData[0];
 		while (*currentRow){
 			Data **column = *currentRow;
-			for (int i = 0; i < selectColumns.size(); ++i){
+			for (size_t i = 0; i < selectColumns.size(); ++i){
 				char outputString[MAX_DATA_LENGTH] = "";
 				switch ((*column)->type){
 				case DataType::INTEGER:
