@@ -7,6 +7,12 @@
 
 #include "ExecuteSQL.hpp"
 
+//#define DISABLED_TestNo16 TestNo16
+//#define DISABLED_TestNo17 TestNo17
+//#define DISABLED_TestNo19 TestNo19
+//#define DISABLED_TestNo30 TestNo30
+//#define DISABLED_TestNo160 TestNo160
+
 //! ExecuteSQLの戻り値の種類を表します。
 enum REAULT_VALUE
 {
