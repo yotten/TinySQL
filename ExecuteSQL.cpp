@@ -5,10 +5,6 @@
 #include "extension_tree_node.hpp"
 #include "column_index.hpp"
 
-#include <cstdio>
-#include <cstdbool>
-#include <cstdlib>
-#include <ctype.h>
 #include <cstring>
 #include <algorithm>
 #include <vector>
