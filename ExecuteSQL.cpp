@@ -204,7 +204,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 	vector<TokenKind> orders;
 	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
-	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
 	vector<Data ***> currentRows;// 入力された各テーブルの、現在出力している行を指すカーソルです。
 	ExtensionTreeNode *whereTopNode = nullptr; // 式木の根となるノードです。
 	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
@@ -476,7 +475,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 								// 指定がない場合は昇順となります。
 								orders.push_back(TokenKind::ASC);
 							}
-							++orderByColumnsNum;
 						}
 						else{
 							throw ResultValue::ERR_SQL_SYNTAX;
