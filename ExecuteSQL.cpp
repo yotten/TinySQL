@@ -226,7 +226,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			charactorBackPoint = charactorCursol;
 			for (search = num.c_str(); *search && *charactorCursol != *search; ++search){}
 			if (*search){
-				Token literal = (Token){ TokenKind::INT_LITERAL, "" }; // 読み込んだ数値リテラルの情報です。
+				Token literal{TokenKind::INT_LITERAL}; // 読み込んだ数値リテラルの情報です。
 				int wordLength = 0; // 数値リテラルに現在読み込んでいる文字の数です。
 
 				// 数字が続く間、文字を読み込み続けます。
@@ -259,7 +259,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
 			if (*charactorCursol == "\'"[0]){
 				++charactorCursol;
-				Token literal = (Token){ TokenKind::STRING_LITERAL, "\'" }; // 読み込んだ文字列リテラルの情報です。
+				Token literal{TokenKind::STRING_LITERAL, "\'"}; // 読み込んだ文字列リテラルの情報です。
 				int wordLength = 1; // 文字列リテラルに現在読み込んでいる文字の数です。初期値の段階で最初のシングルクォートは読み込んでいます。
 
 				// 次のシングルクォートがくるまで文字を読み込み続けます。
