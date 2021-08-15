@@ -588,9 +588,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						++tokenCursol;
 					}
 
-
 					// 演算子(オペレーターを読み込みます。
-					//Operator middleOperator =(Operator){ .kind = TokenKind::NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
 					Operator middleOperator;
 					// 現在見ている演算子の情報を探します。
 					found = false;
@@ -720,7 +718,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 
 			// 入力CSVのデータ行を読み込みます。
-			int rowNum = 0;
 			inputData.push_back(vector<Data**>());
 
 			while (fgets(inputLineBuffer, MAX_FILE_LINE_LENGTH, inputTableFiles.back())) {
@@ -907,7 +904,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				*row[i] = *(*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 			}
 
-			//Data **allColumnsRow = allColumnOutputData[outputData.size() - 1] = (Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 			allColumnOutputData.push_back((Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)));
 			Data **allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 			if (!allColumnsRow){
