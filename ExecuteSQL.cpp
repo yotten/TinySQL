@@ -288,10 +288,10 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 			// キーワードを読み込みます。
 			found = false;
-			for (auto & keywordCondtion : keywordConditions) {
+			for (auto & keywordCondition : keywordConditions) {
 				charactorBackPoint = charactorCursol;
-				Token condition = keywordCondtion; // 確認するキーワードの条件です。
-				const char *wordCursol = keywordCondtion.word;
+				Token condition = keywordCondition; // 確認するキーワードの条件です。
+				const char *wordCursol = keywordCondition.word;
 
 				// キーワードが指定した文字列となっているか確認します。
 				while (*wordCursol && toupper(*charactorCursol++) == *wordCursol){
@@ -303,7 +303,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 				if (!*wordCursol && !*search){
 					// 見つかったキーワードを生成します。
-					tokens.push_back(Token(keywordCondtion.kind));
+					tokens.push_back(Token(keywordCondition.kind));
 					found = true;
 				}
 				else{
@@ -342,7 +342,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			// 識別子の最初の文字を確認します。
 			for (search = alpahUnder.c_str(); *search && *charactorCursol != *search; ++search){};
 			if (*search){
-				Token identifier = (Token){ TokenKind::IDENTIFIER, "" }; // 読み込んだ識別子の情報です。
+				Token identifier{ TokenKind::IDENTIFIER }; // 読み込んだ識別子の情報です。
 				int wordLength = 0; // 識別子に現在読み込んでいる文字の数です。
 				do {
 					// 二文字目以降は数字も許可して文字の種類を確認します。
@@ -547,7 +547,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						++tokenCursol;
 					}
 					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
-						currentNode->value = Data("");
+						currentNode->value = Data();
 
 						// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
 						strncpy(currentNode->value.value.string, tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
@@ -809,8 +809,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// SELECT句の列名指定が*だった場合は、入力CSVの列名がすべて選択されます。
 		if (selectColumns.empty()){
-			for (auto &allInputColumn : allInputColumns) {
-				selectColumns.push_back(allInputColumn);
+			for (auto &inputColumn : allInputColumns) {
+				selectColumns.push_back(inputColumn);
 			}
 		}
 
