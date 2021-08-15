@@ -531,16 +531,14 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					if (tokenCursol->kind == TokenKind::IDENTIFIER){
 
 						// テーブル名が指定されていない場合と仮定して読み込みます。
-						strncpy(currentNode->column.tableName, "", MAX_WORD_LENGTH);
-						strncpy(currentNode->column.columnName, tokenCursol->word, MAX_WORD_LENGTH);
+						currentNode->column = Column(tokenCursol->word);
 						++tokenCursol;
 						if (tokenCursol->kind == TokenKind::DOT){
 							++tokenCursol;
 							if (tokenCursol->kind == TokenKind::IDENTIFIER){
 
 								// テーブル名が指定されていることがわかったので読み替えます。
-								strncpy(currentNode->column.tableName, currentNode->column.columnName, MAX_WORD_LENGTH);
-								strncpy(currentNode->column.columnName, tokenCursol->word, MAX_WORD_LENGTH);
+								currentNode->column = Column(currentNode->column.columnName, tokenCursol->word);
 								++tokenCursol;
 							}
 							else{
