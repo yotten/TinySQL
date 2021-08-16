@@ -22,5 +22,5 @@ Column::Column(const char* columnName) : Column("", columnName)
 Column::Column(const string tableName, const char* columnName)
 {
 	this->tableName = tableName;
-	strncpy(this->columnName, columnName, max(MAX_DATA_LENGTH, MAX_WORD_LENGTH));
+	this->columnName = columnName;
 }

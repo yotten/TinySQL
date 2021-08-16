@@ -8,7 +8,7 @@
 #include "ExecuteSQL.hpp"
 
 #define DISABLED_TestNo16 TestNo16
-#define DISABLED_TestNo17 TestNo17
+//#define DISABLED_TestNo17 TestNo17
 //#define DISABLED_TestNo19 TestNo19
 #define DISABLED_TestNo30 TestNo30
 #define DISABLED_TestNo58 TestNo58
