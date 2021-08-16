@@ -1,6 +1,7 @@
 #pragma once
 
 #include "token_kind.hpp"
+#include <string>
 
 //! トークンを表します。
 class Token {
@@ -18,5 +19,5 @@ public:
 	//! Tokenクラスの新しいインスタンスを初期化します。
 	//! @param [in] kind トークンの種類です。
 	//! @param [in] word 記録されているトークンの文字列です。記録の必要がなければ空白です。
-	Token(const TokenKind kind, const char *word);
+	Token(const TokenKind kind, const std::string word);
 };
