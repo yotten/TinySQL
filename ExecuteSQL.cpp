@@ -822,8 +822,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			for (size_t i = 0; i < tableNames.size(); ++i){
 				int j = 0;
 				for (auto &inputColumn : inputColumns[i]) {
-					char* selectTableNameCursol = selectColumn.tableName;
-					char* inputTableNameCursol = inputColumn.tableName;
+					const char* selectTableNameCursol = selectColumn.tableName.c_str();
+					const char* inputTableNameCursol = inputColumn.tableName.c_str();
 					while (*selectTableNameCursol && toupper(*selectTableNameCursol) == toupper(*inputTableNameCursol++)){
 						++selectTableNameCursol;
 					}
@@ -833,7 +833,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						++selectColumnNameCursol;
 					}
 					if (!*selectColumnNameCursol && !*inputColumnNameCursol &&
-						(!*selectColumn.tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+						(selectColumn.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 						!*selectTableNameCursol && !*inputTableNameCursol)){
 
 						// 既に見つかっているのにもう一つ見つかったらエラーです。
@@ -941,8 +941,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						if (*currentNode->column.columnName){
 							found = false;
 							for (size_t i = 0; i < allInputColumns.size(); ++i){
-								char* whereTableNameCursol = currentNode->column.tableName;
-								char* allInputTableNameCursol = allInputColumns[i].tableName;
+								const char* whereTableNameCursol = currentNode->column.tableName.c_str();
+								const char* allInputTableNameCursol = allInputColumns[i].tableName.c_str();
 								while (*whereTableNameCursol && toupper(*whereTableNameCursol) == toupper(*allInputTableNameCursol++)){
 									++whereTableNameCursol;
 								}
@@ -952,7 +952,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 									++whereColumnNameCursol;
 								}
 								if (!*whereColumnNameCursol && !*allInputColumnNameCursol &&
-									(!*currentNode->column.tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+									(currentNode->column.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 									!*whereTableNameCursol && !*allInputTableNameCursol)){
 									// 既に見つかっているのにもう一つ見つかったらエラーです。
 									if (found){
@@ -1132,8 +1132,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			for (auto &orderByColumn : orderByColumns) {
 				found = false;
 				for (size_t i = 0; i < allInputColumns.size(); ++i){
-					char* orderByTableNameCursol = orderByColumn.tableName;
-					char* allInputTableNameCursol = allInputColumns[i].tableName;
+					const char* orderByTableNameCursol = orderByColumn.tableName.c_str();
+					const char* allInputTableNameCursol = allInputColumns[i].tableName.c_str();
 					while (*orderByTableNameCursol && toupper(*orderByTableNameCursol) == toupper(*allInputTableNameCursol)){
 						++orderByTableNameCursol;
 						++allInputTableNameCursol;
@@ -1145,7 +1145,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						++allInputColumnNameCursol;
 					}
 					if (!*orderByColumnNameCursol && !*allInputColumnNameCursol &&
-						(!*orderByColumn.tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+						(orderByColumn.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 						!*orderByTableNameCursol && !*allInputTableNameCursol)){
 						// 既に見つかっているのにもう一つ見つかったらエラーです。
 						if (found){

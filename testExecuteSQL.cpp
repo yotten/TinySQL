@@ -7,11 +7,12 @@
 
 #include "ExecuteSQL.hpp"
 
-//#define DISABLED_TestNo16 TestNo16
-//#define DISABLED_TestNo17 TestNo17
+#define DISABLED_TestNo16 TestNo16
+#define DISABLED_TestNo17 TestNo17
 //#define DISABLED_TestNo19 TestNo19
-//#define DISABLED_TestNo30 TestNo30
-//#define DISABLED_TestNo160 TestNo160
+#define DISABLED_TestNo30 TestNo30
+#define DISABLED_TestNo58 TestNo58
+#define DISABLED_TestNo160 TestNo160
 
 //! ExecuteSQLの戻り値の種類を表します。
 enum REAULT_VALUE
@@ -919,7 +920,7 @@ TEST_F(MyTest, TestNo57) { //ExecuteSQLはORDERBYで曖昧なテーブルと一�
 
     ASSERT_EQ((int)ERR_BAD_COLUMN_NAME, result);
 }
-TEST_F(MyTest, TestNo58) { //ExecuteSQLはWHERE句で数値列に対する条件として文字列は指定できません。)
+TEST_F(MyTest, DISABLED_TestNo58) { //ExecuteSQLはWHERE句で数値列に対する条件として文字列は指定できません。)
     const string sql =
         "SELECT * "
         "WHERE Integer = \'2\' "

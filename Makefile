@@ -21,8 +21,8 @@ operator.o: operator.cpp operator.hpp
 token.o: token.cpp token.hpp token.hpp
 	g++ -c token.cpp
 
-column.o: column.cpp column.hpp
-	g++ -c column.cpp 
+column.o: column.cpp column.hpp 
+	g++ -c $(CFLAGS) column.cpp 
 
 extension_tree_node.o: extension_tree_node.cpp extension_tree_node.hpp
 	g++ -c extension_tree_node.cpp
