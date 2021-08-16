@@ -693,7 +693,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 				// 読み込んだ行を最後まで読みます。
 				while (*charactorCursol && *charactorCursol != '\r' && *charactorCursol != '\n'){
-					inputColumns[i].push_back(Column(tableNames[i].c_str(), ""));
+					inputColumns[i].push_back(Column(tableNames[i], ""));
 					char *writeCursol = inputColumns[i].back().columnName; // 列名の書き込みに利用するカーソルです。
 
 					// 列名を一つ読みます。
@@ -802,7 +802,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 		for (size_t i = 0; i < tableNames.size(); ++i){
 			for (auto &inputColumn : inputColumns[i]) {
-				allInputColumns.push_back(Column(tableNames[i].c_str(), inputColumn.columnName));
+				allInputColumns.push_back(Column(tableNames[i], inputColumn.columnName));
 			}
 		}
 
