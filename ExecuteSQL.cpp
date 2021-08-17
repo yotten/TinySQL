@@ -696,7 +696,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						columnName.push_back(*charactorCursol++);
 					}
 					// 書き込んでいる列名の文字列に終端文字を書き込みます。
-					inputColumns[i].push_back(Column(tableNames[i], columnName.c_str()));
+					inputColumns[i].push_back(Column(tableNames[i], columnName));
 
 					// 入力行のカンマの分を読み進めます。
 					++charactorCursol;
@@ -797,7 +797,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 		for (size_t i = 0; i < tableNames.size(); ++i){
 			for (auto &inputColumn : inputColumns[i]) {
-				allInputColumns.push_back(Column(tableNames[i], inputColumn.columnName.c_str()));
+				allInputColumns.push_back(Column(tableNames[i], inputColumn.columnName));
 			}
 		}
 
