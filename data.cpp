@@ -1,5 +1,4 @@
 #include "data.hpp"
-#include "token_kind.hpp"
 
 #include <algorithm>
 #include <cstring>

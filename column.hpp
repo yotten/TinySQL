@@ -1,6 +1,5 @@
 #pragma once
 
-#include "token_kind.hpp"
 #include <string>
 
 //! 指定された列の情報です。どのテーブルに所属するかの情報も含みます。
