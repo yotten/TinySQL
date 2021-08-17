@@ -21,6 +21,9 @@ class ColumnIndex{
 class Column{
     +string tableName
     +string columnName
+    +Column()
+    +Column(const char* columnName)
+    +Column(const string tableName, const char* columnName)
 }
 enum DataType{
    	STRING
