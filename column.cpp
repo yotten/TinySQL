@@ -12,7 +12,7 @@ Column::Column() : Column("", "")
 
 //! Columnクラスの新しいインスタンスを初期化します。
 //! @param [in] columnName 指定された列の列名です。
-Column::Column(const char* columnName) : Column("", columnName)
+Column::Column(const string columnName) : Column("", columnName)
 {
 }
 

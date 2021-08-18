@@ -22,7 +22,7 @@ class Column{
     +string tableName
     +string columnName
     +Column()
-    +Column(const char* columnName)
+    +Column(const string columnName)
     +Column(const string tableName, const string columnName)
 }
 enum DataType{
