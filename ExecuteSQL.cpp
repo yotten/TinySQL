@@ -968,7 +968,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 							;
 							// 符号を考慮して値を計算します。
 							if (currentNode->value.type == DataType::INTEGER){
-								currentNode->value.value.integer *= currentNode->signCoefficient;
+								currentNode->value = Data(currentNode->value.integer() * currentNode->signCoefficient);
 							}
 						}
 						break;
