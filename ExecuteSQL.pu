@@ -4,6 +4,13 @@ class testExecuteSQL {}
 class ExecuteSQL {}
 class Data {
     +DataType type
+	+union value
+	+Data(const char* value)
+	+Data(const int value)
+	+Data(const bool value)
+	+const char* string() const
+	+const int integer() const
+	+const int boolean() const
 }
 class Operator{
     +TokenKind kind

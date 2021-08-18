@@ -37,4 +37,16 @@ public:
 	//! Dataクラスの新しいインスタンスを初期化します。
 	//! @param [in] value データの値です。
 	Data(const bool value);
+
+	//! データが文字列型の場合の値を取得します。
+	//! @return データが文字列型の場合の値です。
+	const char* string() const;
+
+	//! データが整数型の場合の値を取得します。
+	//! @return データが整数型の場合の値です。
+	const int integer() const;
+
+	//! データが真偽値型の場合の値を取得します。
+	//! @return データが真偽値型の場合の値です。
+	const int boolean() const;
 };

@@ -28,3 +28,24 @@ Data::Data(const bool value) :type(DataType::BOOLEAN)
 {
     this->value.boolean = value;
 }
+
+//! データが文字列型の場合の値を取得します。
+//! @return データが文字列型の場合の値です。
+const char* Data::string() const
+{
+    return value.string;
+}
+
+//! データが整数型の場合の値を取得します。
+//! @return データが整数型の場合の値です。
+const int Data::integer() const
+{
+    return value.integer;
+}
+
+//! データが真偽値型の場合の値を取得します。
+//! @return データが真偽値型の場合の値です。
+const int Data::boolean() const
+{
+    return value.boolean;
+}
