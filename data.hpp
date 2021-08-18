@@ -41,4 +41,8 @@ public:
 	//! データが文字列型の場合の値を取得します。
 	//! @return データが文字列型の場合の値です。
 	const char* string() const;
+
+	//! データが整数型の場合の値を取得します。
+	//! @return データが整数型の場合の値です。
+	const int integer() const;
 };

@@ -35,3 +35,10 @@ const char* Data::string() const
 {
     return value.string;
 }
+
+//! データが整数型の場合の値を取得します。
+//! @return データが整数型の場合の値です。
+const int Data::integer() const
+{
+    return value.integer;
+}

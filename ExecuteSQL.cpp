@@ -988,22 +988,22 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						case DataType::INTEGER:
 							switch (currentNode->middleOperator.kind){
 							case TokenKind::EQUAL:
-								currentNode->value.value.boolean = currentNode->left->value.value.integer == currentNode->right->value.value.integer;
+								currentNode->value.value.boolean = currentNode->left->value.integer() == currentNode->right->value.integer();
 								break;
 							case TokenKind::GREATER_THAN:
-								currentNode->value.value.boolean = currentNode->left->value.value.integer > currentNode->right->value.value.integer;
+								currentNode->value.value.boolean = currentNode->left->value.integer() > currentNode->right->value.integer();
 								break;
 							case TokenKind::GREATER_THAN_OR_EQUAL:
-								currentNode->value.value.boolean = currentNode->left->value.value.integer >= currentNode->right->value.value.integer;
+								currentNode->value.value.boolean = currentNode->left->value.integer() >= currentNode->right->value.integer();
 								break;
 							case TokenKind::LESS_THAN:
-								currentNode->value.value.boolean = currentNode->left->value.value.integer < currentNode->right->value.value.integer;
+								currentNode->value.value.boolean = currentNode->left->value.integer() < currentNode->right->value.integer();
 								break;
 							case TokenKind::LESS_THAN_OR_EQUAL:
-								currentNode->value.value.boolean = currentNode->left->value.value.integer <= currentNode->right->value.value.integer;
+								currentNode->value.value.boolean = currentNode->left->value.integer() <= currentNode->right->value.integer();
 								break;
 							case TokenKind::NOT_EQUAL:
-								currentNode->value.value.boolean = currentNode->left->value.value.integer != currentNode->right->value.value.integer;
+								currentNode->value.value.boolean = currentNode->left->value.integer() != currentNode->right->value.integer();
 								break;
 							}
 							break;
@@ -1046,16 +1046,16 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						// 比較結果を演算子によって計算方法を変えて、計算します。
 						switch (currentNode->middleOperator.kind){
 						case TokenKind::PLUS:
-							currentNode->value.value.integer = currentNode->left->value.value.integer + currentNode->right->value.value.integer;
+							currentNode->value.value.integer = currentNode->left->value.integer() + currentNode->right->value.integer();
 							break;
 						case TokenKind::MINUS:
-							currentNode->value.value.integer = currentNode->left->value.value.integer - currentNode->right->value.value.integer;
+							currentNode->value.value.integer = currentNode->left->value.integer() - currentNode->right->value.integer();
 							break;
 						case TokenKind::ASTERISK:
-							currentNode->value.value.integer = currentNode->left->value.value.integer * currentNode->right->value.value.integer;
+							currentNode->value.value.integer = currentNode->left->value.integer() * currentNode->right->value.integer();
 							break;
 						case TokenKind::SLASH:
-							currentNode->value.value.integer = currentNode->left->value.value.integer / currentNode->right->value.value.integer;
+							currentNode->value.value.integer = currentNode->left->value.integer() / currentNode->right->value.integer();
 							break;
 						}
 						break;
@@ -1168,7 +1168,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						switch (mData->type)
 						{
 						case DataType::INTEGER:
-							cmp = jData->value.integer - mData->value.integer;
+							cmp = jData->integer() - mData->integer();
 							break;
 						case DataType::STRING:
 							cmp = strcmp(jData->value.string, mData->string());
@@ -1235,7 +1235,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				char outputString[MAX_DATA_LENGTH] = "";
 				switch ((*column)->type){
 				case DataType::INTEGER:
-					itoa((*column)->value.integer, outputString, 10);
+					itoa((*column)->integer(), outputString, 10);
 					break;
 				case DataType::STRING:
 					strcpy(outputString, (*column)->string());
