@@ -12,16 +12,16 @@ enum class DataType
 
 //! 一つの値を持つデータです。
 class Data {
-public:
-	DataType type = DataType::STRING; //!< データの型です。
-
 	//! 実際のデータを格納する共用体です。
 	union
 	{
 		char string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
 		int integer;                  //!< データが整数型の場合の値です。
 		bool boolean;                 //!< データが真偽値型の場合の値です。
-	} value;
+	} m_value;
+
+public:
+	DataType type = DataType::STRING; //!< データの型です。
 
 	//! Dataクラスの新しいインスタンスを初期化します。
 	Data();

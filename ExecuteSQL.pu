@@ -4,7 +4,7 @@ class testExecuteSQL {}
 class ExecuteSQL {}
 class Data {
     +DataType type
-	+union value
+	-union value
 	+Data(const char* value)
 	+Data(const int value)
 	+Data(const bool value)

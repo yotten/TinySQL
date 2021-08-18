@@ -789,7 +789,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				if (!found){
 					currentRow = &inputData[i][0];
 					while (*currentRow){
-						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->value.string));
+						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->string()));
 						++currentRow;
 					}
 				}
@@ -1175,7 +1175,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 							cmp = jData->integer() - mData->integer();
 							break;
 						case DataType::STRING:
-							cmp = strcmp(jData->value.string, mData->string());
+							cmp = strcmp(jData->string(), mData->string());
 							break;
 						}
 
