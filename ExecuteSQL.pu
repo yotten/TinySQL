@@ -8,6 +8,7 @@ class Data {
 	+Data(const char* value)
 	+Data(const int value)
 	+Data(const bool value)
+	+const char* string() const
 }
 class Operator{
     +TokenKind kind
