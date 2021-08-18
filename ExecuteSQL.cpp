@@ -5,10 +5,6 @@
 #include "extension_tree_node.hpp"
 #include "column_index.hpp"
 
-#include <cstdio>
-#include <cstdbool>
-#include <cstdlib>
-#include <ctype.h>
 #include <cstring>
 #include <algorithm>
 #include <vector>
@@ -17,18 +13,19 @@
 #include <iostream>
 #include "ExecuteSQL.hpp"
 
-#pragma warning(disable:4996)
+//#pragma warning(disable:4996)
 
 #define MAX_FILE_LINE_LENGTH 4096          //!< 読み込むファイルの一行の最大長です。
 #define MAX_COLUMN_COUNT 16                //!< 入出力されるデータに含まれる列の最大数です。
-#define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
 #define MAX_TABLE_COUNT 8                  //!< CSVとして入力されるテーブルの最大数です。
+
+using namespace std;
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
 //! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
 //! @return 実行した結果の状態です。
-int ExecuteSQL(const char*, const char*);
+int ExecuteSQL(const string, const string);
 
 //! ExecuteSQLの戻り値の種類を表します。
 enum class ResultValue : int {
@@ -51,8 +48,6 @@ static char *itoa(int n, char *buffer, int radix)
 
 	return buffer;
 }
-
-using namespace std;
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
@@ -123,9 +118,8 @@ using namespace std;
 //! SELECT USERS.NAME, CHILDREN.NAME                                                                         @n
 //! WHERE USERS.ID = CHILDREN.PARENTID                                                                       @n
 //! FROM USERS, CHILDREN                                                                                     @n
-int ExecuteSQL(const char* sql, const char* outputFileName)
+int ExecuteSQL(const string sql, const string outputFileName)
 {
-	enum ResultValue error = ResultValue::OK;                           // 発生したエラーの種類です。
 	vector<FILE *> inputTableFiles;								// 読み込む入力ファイルの全てのファイルポインタです。
 	FILE *outputFile = nullptr;                                // 書き込むファイルのファイルポインタです。
 	int result = 0;                                         // 関数の戻り値を一時的に保存します。
@@ -133,14 +127,13 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
 	Data ***currentRow = nullptr;                              // データ検索時に現在見ている行を表します。
 	vector<vector<Data**>> inputData;     					  // 入力データです。
-	//Data **outputData[MAX_ROW_COUNT] = { nullptr };            // 出力データです。
 	vector<Data**> outputData;									// 出力データです。
 	vector<Data**> allColumnOutputData;						// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
-	const char *alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
-	const char *alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
-	const char *signNum = "+-0123456789"; // 全ての符号と数字です。
-	const char *num = "0123456789"; // 全ての数字です。
-	const char* space = " \t\r\n"; // 全ての空白文字です。
+	const string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
+	const string alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
+	const string signNum = "+-0123456789"; // 全ての符号と数字です。
+	const string num = "0123456789"; // 全ての数字です。
+	const string space = " \t\r\n"; // 全ての空白文字です。
 
 	// SQLからトークンを読み込みます。
 
@@ -199,17 +192,13 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	};
 
 	const char* charactorBackPoint = nullptr; // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
-	const char* charactorCursol = sql; // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
+	const char* charactorCursol = sql.c_str(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 	vector<string> tableNames;
 
 	vector<TokenKind> orders;
-	int allInputColumnsNum = 0; // 入力に含まれるすべての列の数です。
-	int orderByColumnsNum = 0; // ORDER句から現在読み込まれた列名の数です。
 	vector<Data ***> currentRows;// 入力された各テーブルの、現在出力している行を指すカーソルです。
 	ExtensionTreeNode *whereTopNode = nullptr; // 式木の根となるノードです。
-	int inputColumnNums[MAX_TABLE_COUNT] = { 0 }; // 各テーブルごとの列の数です。
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
-	int selectColumnIndexesNum = 0; // selectColumnIndexesの現在の数。
 	Token *tokenCursol; 	// 現在見ているトークンを指します。
 	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
 	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
@@ -219,7 +208,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		while (*charactorCursol){
 
 			// 空白を読み飛ばします。
-			for (search = space; *search && *charactorCursol != *search; ++search){}
+			for (search = space.c_str(); *search && *charactorCursol != *search; ++search){}
 			if (*search){
 				charactorCursol++;
 				continue;
@@ -229,14 +218,14 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 			// 先頭文字が数字であるかどうかを確認します。
 			charactorBackPoint = charactorCursol;
-			for (search = num; *search && *charactorCursol != *search; ++search){}
+			for (search = num.c_str(); *search && *charactorCursol != *search; ++search){}
 			if (*search){
-				Token literal = (Token){ TokenKind::INT_LITERAL, "" }; // 読み込んだ数値リテラルの情報です。
+				Token literal{TokenKind::INT_LITERAL}; // 読み込んだ数値リテラルの情報です。
 				int wordLength = 0; // 数値リテラルに現在読み込んでいる文字の数です。
 
 				// 数字が続く間、文字を読み込み続けます。
 				do {
-					for (search = num; *search && *charactorCursol != *search; ++search){}
+					for (search = num.c_str(); *search && *charactorCursol != *search; ++search){}
 					if (*search){
 						if (MAX_WORD_LENGTH - 1 <= wordLength){
 							throw ResultValue::ERR_MEMORY_OVER;
@@ -247,7 +236,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				} while (*search);
 
 				// 数字の後にすぐに識別子が続くのは紛らわしいので数値リテラルとは扱いません。
-				for (search = alpahUnder; *search && *charactorCursol != *search; ++search){}
+				for (search = alpahUnder.c_str(); *search && *charactorCursol != *search; ++search){}
 				if (!*search){
 					literal.word[wordLength] = '\0';
 					tokens.push_back(literal);
@@ -264,7 +253,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
 			if (*charactorCursol == "\'"[0]){
 				++charactorCursol;
-				Token literal = (Token){ TokenKind::STRING_LITERAL, "\'" }; // 読み込んだ文字列リテラルの情報です。
+				Token literal{TokenKind::STRING_LITERAL, "\'"}; // 読み込んだ文字列リテラルの情報です。
 				int wordLength = 1; // 文字列リテラルに現在読み込んでいる文字の数です。初期値の段階で最初のシングルクォートは読み込んでいます。
 
 				// 次のシングルクォートがくるまで文字を読み込み続けます。
@@ -293,10 +282,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 			// キーワードを読み込みます。
 			found = false;
-			for (auto & keywordCondtion : keywordConditions) {
+			for (auto & keywordCondition : keywordConditions) {
 				charactorBackPoint = charactorCursol;
-				Token condition = keywordCondtion; // 確認するキーワードの条件です。
-				const char *wordCursol = keywordCondtion.word;
+				const char *wordCursol = keywordCondition.word;
 
 				// キーワードが指定した文字列となっているか確認します。
 				while (*wordCursol && toupper(*charactorCursol++) == *wordCursol){
@@ -304,11 +292,11 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				}
 
 				// キーワードに識別子が区切りなしに続いていないかを確認するため、キーワードの終わった一文字あとを調べます。
-				for (search = alpahNumUnder; *search && *charactorCursol != *search; ++search){};
+				for (search = alpahNumUnder.c_str(); *search && *charactorCursol != *search; ++search){};
 
 				if (!*wordCursol && !*search){
 					// 見つかったキーワードを生成します。
-					tokens.push_back(Token(keywordCondtion.kind));
+					tokens.push_back(Token(keywordCondition.kind));
 					found = true;
 				}
 				else{
@@ -345,13 +333,13 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			// 識別子を読み込みます。
 
 			// 識別子の最初の文字を確認します。
-			for (search = alpahUnder; *search && *charactorCursol != *search; ++search){};
+			for (search = alpahUnder.c_str(); *search && *charactorCursol != *search; ++search){};
 			if (*search){
-				Token identifier = (Token){ TokenKind::IDENTIFIER, "" }; // 読み込んだ識別子の情報です。
+				Token identifier{ TokenKind::IDENTIFIER }; // 読み込んだ識別子の情報です。
 				int wordLength = 0; // 識別子に現在読み込んでいる文字の数です。
 				do {
 					// 二文字目以降は数字も許可して文字の種類を確認します。
-					for (search = alpahNumUnder; *search && *charactorCursol != *search; ++search){};
+					for (search = alpahNumUnder.c_str(); *search && *charactorCursol != *search; ++search){};
 					if (*search){
 						if (MAX_WORD_LENGTH - 1 <= wordLength){
 							throw ResultValue::ERR_MEMORY_OVER;
@@ -425,6 +413,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 
 		// ORDER句とWHERE句を読み込みます。最大各一回ずつ書くことができます。
+		readOrder = false; // すでにORDER句が読み込み済みかどうかです。
+		readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
 		while (tokenCursol->kind == TokenKind::ORDER || tokenCursol->kind == TokenKind::WHERE){
 
 			// 二度目のORDER句はエラーです。
@@ -476,7 +466,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 								// 指定がない場合は昇順となります。
 								orders.push_back(TokenKind::ASC);
 							}
-							++orderByColumnsNum;
 						}
 						else{
 							throw ResultValue::ERR_SQL_SYNTAX;
@@ -533,16 +522,14 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					if (tokenCursol->kind == TokenKind::IDENTIFIER){
 
 						// テーブル名が指定されていない場合と仮定して読み込みます。
-						strncpy(currentNode->column.tableName, "", MAX_WORD_LENGTH);
-						strncpy(currentNode->column.columnName, tokenCursol->word, MAX_WORD_LENGTH);
+						currentNode->column = Column(tokenCursol->word);
 						++tokenCursol;
 						if (tokenCursol->kind == TokenKind::DOT){
 							++tokenCursol;
 							if (tokenCursol->kind == TokenKind::IDENTIFIER){
 
 								// テーブル名が指定されていることがわかったので読み替えます。
-								strncpy(currentNode->column.tableName, currentNode->column.columnName, MAX_WORD_LENGTH);
-								strncpy(currentNode->column.columnName, tokenCursol->word, MAX_WORD_LENGTH);
+								currentNode->column = Column(currentNode->column.columnName, tokenCursol->word);
 								++tokenCursol;
 							}
 							else{
@@ -555,7 +542,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						++tokenCursol;
 					}
 					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
-						currentNode->value = Data("");
+						currentNode->value = Data();
 
 						// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
 						strncpy(currentNode->value.value.string, tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
@@ -590,9 +577,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						++tokenCursol;
 					}
 
-
 					// 演算子(オペレーターを読み込みます。
-					//Operator middleOperator =(Operator){ .kind = TokenKind::NOT_TOKEN, .order = 0 }; // 現在読み込んでいる演算子の情報です。
 					Operator middleOperator;
 					// 現在見ている演算子の情報を探します。
 					found = false;
@@ -661,6 +646,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			throw ResultValue::ERR_SQL_SYNTAX;
 		}
 
+		first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
 		while (tokenCursol->kind == TokenKind::COMMA || first){
 			if (tokenCursol->kind == TokenKind::COMMA){
 				++tokenCursol;
@@ -685,34 +671,32 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		for (size_t i = 0; i < tableNames.size(); ++i){
 
 			// 入力ファイル名を生成します。
-			const char csvExtension[] = ".csv"; // csvの拡張子です。
-			char fileName[MAX_WORD_LENGTH + sizeof(csvExtension) - 1] = ""; // 拡張子を含む、入力ファイルのファイル名です。
-			strncat(fileName, tableNames[i].c_str(), MAX_WORD_LENGTH + sizeof(csvExtension) - 1);
-			strncat(fileName, csvExtension, MAX_WORD_LENGTH + sizeof(csvExtension) - 1);
+			const string csvExtension = ".csv"; // csvの拡張子です。
+			const string fileName = tableNames[i] + csvExtension; // 拡張子を含む、入力ファイルのファイル名です。
 
 			// 入力ファイルを開きます。
-			inputTableFiles.push_back(fopen(fileName, "r"));
+			inputTableFiles.push_back(fopen(fileName.c_str(), "r"));
 			if (!inputTableFiles.back()) {
 				throw ResultValue::ERR_FILE_OPEN;
 			}
 
 			// 入力CSVのヘッダ行を読み込みます。
 			inputColumns.push_back(vector<Column>());
-			char inputLine[MAX_FILE_LINE_LENGTH] = ""; // ファイルから読み込んだ行文字列です。
-			if (fgets(inputLine, MAX_FILE_LINE_LENGTH, inputTableFiles.back())){
-				charactorCursol = inputLine;
+			char inputLineBuffer[MAX_FILE_LINE_LENGTH] = ""; // ファイルから読み込んだ行文字列です。
+			if (fgets(inputLineBuffer, MAX_FILE_LINE_LENGTH, inputTableFiles.back())){
+				string inputLine = inputLineBuffer;
+				charactorCursol = inputLine.c_str();
 
 				// 読み込んだ行を最後まで読みます。
 				while (*charactorCursol && *charactorCursol != '\r' && *charactorCursol != '\n'){
-					inputColumns[i].push_back(Column(tableNames[i].c_str(), ""));
-					char *writeCursol = inputColumns[i].back().columnName; // 列名の書き込みに利用するカーソルです。
+					string columnName;
 
 					// 列名を一つ読みます。
 					while (*charactorCursol && *charactorCursol != ',' && *charactorCursol != '\r'&& *charactorCursol != '\n'){
-						*writeCursol++ = *charactorCursol++;
+						columnName.push_back(*charactorCursol++);
 					}
 					// 書き込んでいる列名の文字列に終端文字を書き込みます。
-					writeCursol[1] = '\0';
+					inputColumns[i].push_back(Column(tableNames[i], columnName));
 
 					// 入力行のカンマの分を読み進めます。
 					++charactorCursol;
@@ -723,10 +707,10 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 
 			// 入力CSVのデータ行を読み込みます。
-			int rowNum = 0;
 			inputData.push_back(vector<Data**>());
 
-			while (fgets(inputLine, MAX_FILE_LINE_LENGTH, inputTableFiles.back())) {
+			while (fgets(inputLineBuffer, MAX_FILE_LINE_LENGTH, inputTableFiles.back())) {
+				string inputLine = inputLineBuffer;
 				inputData[i].push_back((Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*))); // 入力されている一行分のデータです。
 				Data **row = inputData[i].back();
 
@@ -735,7 +719,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					row[j] = nullptr;
 				}
 
-				charactorCursol = inputLine;
+				charactorCursol = inputLine.c_str();
 				int columnNum = 0; // いま何列目を読み込んでいるか。0基底の数字となります。
 
 				// 読み込んだ行を最後まで読みます。
@@ -777,7 +761,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					char *currentChar = (*currentRow)[j]->value.string;
 					while (*currentChar){
 						bool isNum = false;
-						const char *currentNum = signNum;
+						const char *currentNum = signNum.c_str();
 						while (*currentNum){
 							if (*currentChar == *currentNum){
 								isNum = true;
@@ -813,14 +797,14 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 		for (size_t i = 0; i < tableNames.size(); ++i){
 			for (auto &inputColumn : inputColumns[i]) {
-				allInputColumns.push_back(Column(tableNames[i].c_str(), inputColumn.columnName));
+				allInputColumns.push_back(Column(tableNames[i], inputColumn.columnName));
 			}
 		}
 
 		// SELECT句の列名指定が*だった場合は、入力CSVの列名がすべて選択されます。
 		if (selectColumns.empty()){
-			for (auto &allInputColumn : allInputColumns) {
-				selectColumns.push_back(allInputColumn);
+			for (auto &inputColumn : allInputColumns) {
+				selectColumns.push_back(inputColumn);
 			}
 		}
 
@@ -828,24 +812,23 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// SELECT句で指定された列名が、何個目の入力ファイルの何列目に相当するかを判別します。
 		vector<ColumnIndex> selectColumnIndexes; // SELECT句で指定された列の、入力ファイルとしてのインデックスです。
-		found = false;
 		for (auto &selectColumn : selectColumns) {
 			found = false;
-			for (int i = 0; i < tableNames.size(); ++i){
+			for (size_t i = 0; i < tableNames.size(); ++i){
 				int j = 0;
 				for (auto &inputColumn : inputColumns[i]) {
-					char* selectTableNameCursol = selectColumn.tableName;
-					char* inputTableNameCursol = inputColumn.tableName;
+					const char* selectTableNameCursol = selectColumn.tableName.c_str();
+					const char* inputTableNameCursol = inputColumn.tableName.c_str();
 					while (*selectTableNameCursol && toupper(*selectTableNameCursol) == toupper(*inputTableNameCursol++)){
 						++selectTableNameCursol;
 					}
-					char* selectColumnNameCursol = selectColumn.columnName;
-					char* inputColumnNameCursol = inputColumn.columnName;
+					const char* selectColumnNameCursol = selectColumn.columnName.c_str();
+					const char* inputColumnNameCursol = inputColumn.columnName.c_str();
 					while (*selectColumnNameCursol && toupper(*selectColumnNameCursol) == toupper(*inputColumnNameCursol++)){
 						++selectColumnNameCursol;
 					}
 					if (!*selectColumnNameCursol && !*inputColumnNameCursol &&
-						(!*selectColumn.tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+						(selectColumn.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 						!*selectTableNameCursol && !*inputTableNameCursol)){
 
 						// 既に見つかっているのにもう一つ見つかったらエラーです。
@@ -875,7 +858,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			// 既存数値の符号を計算します。
 			for (auto &whereExtensionNode : whereExtensionNodes) {
 				if (whereExtensionNode.middleOperator.kind == TokenKind::NOT_TOKEN &&
-					!*whereExtensionNode.column.columnName &&
+					whereExtensionNode.column.columnName.empty() &&
 					whereExtensionNode.value.type == DataType::INTEGER) {
 					whereExtensionNode.value.value.integer *= whereExtensionNode.signCoefficient;
 				}
@@ -889,10 +872,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 出力するデータを設定します。
 		while (true){
-			// if (MAX_ROW_COUNT <= outputRowsNum){
-			// 	throw ResultValue::ERR_MEMORY_OVER;
-			// }
-			// Data **row = outputData[outputRowsNum] = (Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
 			outputData.push_back((Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*)));
 			Data **row = outputData.back(); // 出力している一行分のデータです。
 			if (!row){
@@ -913,7 +892,6 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				*row[i] = *(*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 			}
 
-			//Data **allColumnsRow = allColumnOutputData[outputData.size() - 1] = (Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 			allColumnOutputData.push_back((Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)));
 			Data **allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 			if (!allColumnsRow){
@@ -955,21 +933,21 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 						// ノードにデータが設定されている場合です。
 
 						// データが列名で指定されている場合、今扱っている行のデータを設定します。
-						if (*currentNode->column.columnName){
+						if (!currentNode->column.columnName.empty()){
 							found = false;
 							for (size_t i = 0; i < allInputColumns.size(); ++i){
-								char* whereTableNameCursol = currentNode->column.tableName;
-								char* allInputTableNameCursol = allInputColumns[i].tableName;
+								const char* whereTableNameCursol = currentNode->column.tableName.c_str();
+								const char* allInputTableNameCursol = allInputColumns[i].tableName.c_str();
 								while (*whereTableNameCursol && toupper(*whereTableNameCursol) == toupper(*allInputTableNameCursol++)){
 									++whereTableNameCursol;
 								}
-								char* whereColumnNameCursol = currentNode->column.columnName;
-								char* allInputColumnNameCursol = allInputColumns[i].columnName;
+								const char* whereColumnNameCursol = currentNode->column.columnName.c_str();
+								const char* allInputColumnNameCursol = allInputColumns[i].columnName.c_str();
 								while (*whereColumnNameCursol && toupper(*whereColumnNameCursol) == toupper(*allInputColumnNameCursol++)){
 									++whereColumnNameCursol;
 								}
 								if (!*whereColumnNameCursol && !*allInputColumnNameCursol &&
-									(!*currentNode->column.tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+									(currentNode->column.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 									!*whereTableNameCursol && !*allInputTableNameCursol)){
 									// 既に見つかっているのにもう一つ見つかったらエラーです。
 									if (found){
@@ -1149,20 +1127,20 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			for (auto &orderByColumn : orderByColumns) {
 				found = false;
 				for (size_t i = 0; i < allInputColumns.size(); ++i){
-					char* orderByTableNameCursol = orderByColumn.tableName;
-					char* allInputTableNameCursol = allInputColumns[i].tableName;
+					const char* orderByTableNameCursol = orderByColumn.tableName.c_str();
+					const char* allInputTableNameCursol = allInputColumns[i].tableName.c_str();
 					while (*orderByTableNameCursol && toupper(*orderByTableNameCursol) == toupper(*allInputTableNameCursol)){
 						++orderByTableNameCursol;
 						++allInputTableNameCursol;
 					}
-					char* orderByColumnNameCursol = orderByColumn.columnName;
-					char* allInputColumnNameCursol = allInputColumns[i].columnName;
+					const char* orderByColumnNameCursol = orderByColumn.columnName.c_str();
+					const char* allInputColumnNameCursol = allInputColumns[i].columnName.c_str();
 					while (*orderByColumnNameCursol && toupper(*orderByColumnNameCursol) == toupper(*allInputColumnNameCursol)){
 						++orderByColumnNameCursol;
 						++allInputColumnNameCursol;
 					}
 					if (!*orderByColumnNameCursol && !*allInputColumnNameCursol &&
-						(!*orderByColumn.tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+						(orderByColumn.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 						!*orderByTableNameCursol && !*allInputTableNameCursol)){
 						// 既に見つかっているのにもう一つ見つかったらエラーです。
 						if (found){
@@ -1224,14 +1202,14 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		}
 
 		// 出力ファイルを開きます。
-		outputFile = fopen(outputFileName, "w");
+		outputFile = fopen(outputFileName.c_str(), "w");
 		if (outputFile == nullptr){
 			throw ResultValue::ERR_FILE_OPEN;
 		}
 
 		// 出力ファイルに列名を出力します。
 		for (size_t i = 0; i < selectColumns.size(); ++i){
-			result = fputs(outputColumns[i].columnName, outputFile);
+			result = fputs(outputColumns[i].columnName.c_str(), outputFile);
 			if (result == EOF){
 				throw ResultValue::ERR_FILE_WRITE;
 			}
@@ -1253,7 +1231,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		currentRow = &outputData[0];
 		while (*currentRow){
 			Data **column = *currentRow;
-			for (int i = 0; i < selectColumns.size(); ++i){
+			for (size_t i = 0; i < selectColumns.size(); ++i){
 				char outputString[MAX_DATA_LENGTH] = "";
 				switch ((*column)->type){
 				case DataType::INTEGER:

@@ -1,0 +1,90 @@
+@startuml
+
+class testExecuteSQL {}
+class ExecuteSQL {}
+class Data {
+    +DataType type
+}
+class Operator{
+    +TokenKind kind
+    +int order
+}
+class Token{
+    +TokenKind kind
+    +char word[MAX_WORD_LENGTH]
+}
+class ExtensionTreeNode{}
+class ColumnIndex{
+    +int table
+    +int column
+}
+class Column{
+    +string tableName
+    +string columnName
+    +Column()
+    +Column(const string columnName)
+    +Column(const string tableName, const string columnName)
+}
+enum DataType{
+   	STRING
+	INTEGER
+	BOOLEAN
+}
+enum TokenKind{
+    NOT_TOKEN
+	ASC
+	AND
+	BY
+	DESC
+	FROM
+	OR
+	ORDER
+	SELECT
+	WHERE
+	ASTERISK
+	COMMA
+	CLOSE_PAREN
+	DOT
+	EQUAL
+	GREATER_THAN
+	GREATER_THAN_OR_EQUAL
+	LESS_THAN
+	LESS_THAN_OR_EQUAL
+	MINUS
+	NOT_EQUAL
+	OPEN_PAREN
+	PLUS
+	SLASH
+	IDENTIFIER
+	INT_LITERAL
+	STRING_LITERAL
+}
+enum ResultValue{
+    OK
+	ERR_FILE_OPEN
+	ERR_FILE_WRITE
+	ERR_FILE_CLOSE
+	ERR_TOKEN_CANT_READ
+	ERR_SQL_SYNTAX
+	ERR_BAD_COLUMN_NAME
+	ERR_WHERE_OPERAND_TYPE
+	ERR_CSV_SYNTAX
+	ERR_MEMORY_ALLOCATE
+	ERR_MEMORY_OVER
+}
+
+ExecuteSQL <-- testExecuteSQL
+Data <-- ExecuteSQL
+Operator <-- ExecuteSQL
+Token <-- ExecuteSQL
+ExtensionTreeNode <-- ExecuteSQL
+ColumnIndex <-- ExecuteSQL
+Column <-- ExecuteSQL
+ResultValue <-- ExecuteSQL
+DataType <-- Data
+TokenKind <-- Token
+TokenKind <-- Operator
+Operator <-- ExtensionTreeNode
+Column <-- ExtensionTreeNode
+Data <-- ExtensionTreeNode
+@enduml
