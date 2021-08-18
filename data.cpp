@@ -42,3 +42,10 @@ const int Data::integer() const
 {
     return value.integer;
 }
+
+//! データが真偽値型の場合の値を取得します。
+//! @return データが真偽値型の場合の値です。
+const int Data::boolean() const
+{
+    return value.boolean;
+}

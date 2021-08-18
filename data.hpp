@@ -45,4 +45,8 @@ public:
 	//! データが整数型の場合の値を取得します。
 	//! @return データが整数型の場合の値です。
 	const int integer() const;
+
+	//! データが真偽値型の場合の値を取得します。
+	//! @return データが真偽値型の場合の値です。
+	const int boolean() const;
 };

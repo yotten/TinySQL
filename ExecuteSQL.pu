@@ -10,6 +10,7 @@ class Data {
 	+Data(const bool value)
 	+const char* string() const
 	+const int integer() const
+	+const int boolean() const
 }
 class Operator{
     +TokenKind kind
