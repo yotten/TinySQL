@@ -542,12 +542,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						++tokenCursol;
 					}
 					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
-						char str[MAX_DATA_LENGTH] = "";
 						// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
-						strncpy(str, (const char*)tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
-						str[MAX_DATA_LENGTH-1] = '\0';
-						str[strlen(str)-1] = '\0';
-						currentNode->value = Data(string(str));
+						currentNode->value = Data(string(tokenCursol->word).substr(1, string(tokenCursol->word).size() - 2));
 
 						++tokenCursol;
 					}
