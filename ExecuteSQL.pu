@@ -10,8 +10,8 @@ class Data {
 	+Data(const int value)
 	+Data(const bool value)
 	+const string& string() const
-	+const int integer() const
-	+const int boolean() const
+	+const int& integer() const
+	+const bool& boolean() const
 }
 class Operator{
     +TokenKind kind

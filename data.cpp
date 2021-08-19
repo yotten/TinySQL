@@ -38,14 +38,14 @@ const std::string& Data::string() const
 
 //! データが整数型の場合の値を取得します。
 //! @return データが整数型の場合の値です。
-const int Data::integer() const
+const int& Data::integer() const
 {
     return m_value.integer;
 }
 
 //! データが真偽値型の場合の値を取得します。
 //! @return データが真偽値型の場合の値です。
-const int Data::boolean() const
+const bool& Data::boolean() const
 {
     return m_value.boolean;
 }
