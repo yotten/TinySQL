@@ -12,6 +12,10 @@
 //#define DISABLED_TestNo19 TestNo19
 #define DISABLED_TestNo30 TestNo30
 #define DISABLED_TestNo58 TestNo58
+//#define DISABLED_TestNo65 TestNo65
+//#define DISABLED_TestNo66 TestNo66
+//#define DISABLED_TestNo67 TestNo67
+//#define DISABLED_TestNo68 TestNo68
 #define DISABLED_TestNo160 TestNo160
 
 //! ExecuteSQLの戻り値の種類を表します。
@@ -1023,7 +1027,7 @@ TEST_F(MyTest, TestNo64) { //ExecuteSQLはWHERE句で数値として以下の条
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, TestNo65) { //ExecuteSQLはWHERE句でマイナスの数値が扱えます。)
+TEST_F(MyTest, DISABLED_TestNo65) { //ExecuteSQLはWHERE句でマイナスの数値が扱えます。)
     const string sql =
         "SELECT * "
         "WHERE Integer < -3 "
@@ -1040,7 +1044,7 @@ TEST_F(MyTest, TestNo65) { //ExecuteSQLはWHERE句でマイナスの数値が扱
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, TestNo66) { //ExecuteSQLはWHERE句でプラスを明示したの数値が扱えます。)
+TEST_F(MyTest, DISABLED_TestNo66) { //ExecuteSQLはWHERE句でプラスを明示したの数値が扱えます。)
     const string sql =
         "SELECT * "
         "WHERE Integer <= +2 "
@@ -1056,7 +1060,7 @@ TEST_F(MyTest, TestNo66) { //ExecuteSQLはWHERE句でプラスを明示したの
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, TestNo67) { //ExecuteSQLはWHERE句でマイナスを指定したの列名が扱えます。)
+TEST_F(MyTest, DISABLED_TestNo67) { //ExecuteSQLはWHERE句でマイナスを指定したの列名が扱えます。)
     const string sql =
         "SELECT * "
         "WHERE -Integer > 3 "
@@ -1073,7 +1077,7 @@ TEST_F(MyTest, TestNo67) { //ExecuteSQLはWHERE句でマイナスを指定した
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, TestNo68) { //ExecuteSQLはWHERE句でプラスを明示した列名が扱えます。)
+TEST_F(MyTest, DISABLED_TestNo68) { //ExecuteSQLはWHERE句でプラスを明示した列名が扱えます。)
     const string sql =
         "SELECT * "
         "WHERE +Integer <= 2 "

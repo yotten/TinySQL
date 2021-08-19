@@ -1,7 +1,7 @@
 #include "data.hpp"
 
 #include <algorithm>
-#include <cstring>
+#include <string>
 
 //! Dataクラスの新しいインスタンスを初期化
 Data::Data() : m_value({0})
@@ -10,9 +10,9 @@ Data::Data() : m_value({0})
 }
 
 //! Dataクラスの新しいインスタンスを初期化
-Data::Data(const char* value) : m_value({0})
+Data::Data(const std::string value) : m_value({0})
 {
-    strncpy(m_string, value, std::max(MAX_DATA_LENGTH, MAX_WORD_LENGTH));
+    m_string = value;
 }
 
 //! Dataクラスの新しいインスタンスを初期化
@@ -31,7 +31,7 @@ Data::Data(const bool value) :type(DataType::BOOLEAN)
 
 //! データが文字列型の場合の値を取得します。
 //! @return データが文字列型の場合の値です。
-const char* Data::string() const
+const std::string& Data::string() const
 {
     return m_string;
 }

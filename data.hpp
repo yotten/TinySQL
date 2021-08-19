@@ -1,6 +1,6 @@
 #pragma once
 
-#include "token_kind.hpp"
+#include <string>
 
 //! 入力や出力、経過の計算に利用するデータのデータ型の種類を表します。
 enum class DataType
@@ -12,7 +12,7 @@ enum class DataType
 
 //! 一つの値を持つデータです。
 class Data {
-	char m_string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
+	std::string m_string; //!< データが文字列型の場合の値です。
 
 	//! 実際のデータを格納する共用体です。
 	union
@@ -29,7 +29,7 @@ public:
 
 	//! Dataクラスの新しいインスタンスを初期化します。
 	//! @param [in] value データの値です。
-	Data(const char* value);
+	Data(const std::string value);
 
 	//! Dataクラスの新しいインスタンスを初期化します。
 	//! @param [in] value データの値です。
@@ -41,7 +41,7 @@ public:
 
 	//! データが文字列型の場合の値を取得します。
 	//! @return データが文字列型の場合の値です。
-	const char* string() const;
+	const std::string& string() const;
 
 	//! データが整数型の場合の値を取得します。
 	//! @return データが整数型の場合の値です。

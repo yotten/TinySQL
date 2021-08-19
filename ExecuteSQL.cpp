@@ -547,7 +547,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						strncpy(str, (const char*)tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
 						str[MAX_DATA_LENGTH-1] = '\0';
 						str[strlen(str)-1] = '\0';
-						currentNode->value = Data(str);
+						currentNode->value = Data(string(str));
 
 						++tokenCursol;
 					}
@@ -745,7 +745,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					// 書き込んでいる列名の文字列に終端文字を書き込みます。
 					writeCursol[1] = '\0';
 
-					*row[columnNum++] = Data(str);
+					*row[columnNum++] = Data(string(str));
 
 					// 入力行のカンマの分を読み進めます。
 					++charactorCursol;
@@ -762,7 +762,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				currentRow = &inputData[i][0];
 				found = false;
 				while (*currentRow){
-					const char *currentChar = (*currentRow)[j]->string();
+					const char *currentChar = (*currentRow)[j]->string().c_str();
 					while (*currentChar){
 						bool isNum = false;
 						const char *currentNum = signNum.c_str();
@@ -789,7 +789,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				if (!found){
 					currentRow = &inputData[i][0];
 					while (*currentRow){
-						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->string()));
+						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->string().c_str()));
 						++currentRow;
 					}
 				}
@@ -1014,22 +1014,22 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						case DataType::STRING:
 							switch (currentNode->middleOperator.kind){
 							case TokenKind::EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string(), currentNode->right->value.string()) == 0);
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) == 0);
 								break;
 							case TokenKind::GREATER_THAN:
-								currentNode->value = Data(strcmp(currentNode->left->value.string(), currentNode->right->value.string()) > 0);
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) > 0);
 								break;
 							case TokenKind::GREATER_THAN_OR_EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string(), currentNode->right->value.string()) >= 0);
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) >= 0);
 								break;
 							case TokenKind::LESS_THAN:
-								currentNode->value = Data(strcmp(currentNode->left->value.string(), currentNode->right->value.string()) < 0);
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) < 0);
 								break;
 							case TokenKind::LESS_THAN_OR_EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string(), currentNode->right->value.string()) <= 0);
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) <= 0);
 								break;
 							case TokenKind::NOT_EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string(), currentNode->right->value.string()) != 0);
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) != 0);
 								break;
 							}
 							break;
@@ -1175,7 +1175,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 							cmp = jData->integer() - mData->integer();
 							break;
 						case DataType::STRING:
-							cmp = strcmp(jData->string(), mData->string());
+							cmp = strcmp(jData->string().c_str(), mData->string().c_str());
 							break;
 						}
 
@@ -1242,7 +1242,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					itoa((*column)->integer(), outputString, 10);
 					break;
 				case DataType::STRING:
-					strcpy(outputString, (*column)->string());
+					strcpy(outputString, (*column)->string().c_str());
 					break;
 				}
 				result = fputs(outputString, outputFile);
