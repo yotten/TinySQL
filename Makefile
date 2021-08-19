@@ -24,7 +24,7 @@ token.o: token.cpp token.hpp token.hpp
 column.o: column.cpp column.hpp 
 	g++ -c $(CFLAGS) column.cpp 
 
-extension_tree_node.o: extension_tree_node.cpp extension_tree_node.hpp
+extension_tree_node.o: extension_tree_node.cpp extension_tree_node.hpp data.hpp
 	g++ -c $(CFLAGS) extension_tree_node.cpp
 
 column_index.o: column_index.cpp column_index.hpp

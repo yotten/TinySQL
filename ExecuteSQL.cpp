@@ -542,12 +542,13 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						++tokenCursol;
 					}
 					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
-						currentNode->value = Data();
-
+						char str[MAX_DATA_LENGTH] = "";
 						// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
-						strncpy(currentNode->value.value.string, tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
-						currentNode->value.value.string[MAX_DATA_LENGTH - 1] = '\0';
-						currentNode->value.value.string[strlen(currentNode->value.string()) - 1] = '\0';
+						strncpy(str, (const char*)tokenCursol->word + 1, min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
+						str[MAX_DATA_LENGTH-1] = '\0';
+						str[strlen(str)-1] = '\0';
+						currentNode->value = Data(string(str));
+
 						++tokenCursol;
 					}
 					else{
@@ -729,12 +730,13 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					if (MAX_COLUMN_COUNT <= columnNum){
 						throw ResultValue::ERR_MEMORY_OVER;
 					}
-					row[columnNum] = (Data*)malloc(sizeof(Data));
+					row[columnNum] = new Data;
 					if (!row[columnNum]){
 						throw ResultValue::ERR_MEMORY_ALLOCATE;
 					}
-					*row[columnNum] = Data("");
-					char *writeCursol = row[columnNum++]->value.string; // データ文字列の書き込みに利用するカーソルです。
+
+					char str[MAX_DATA_LENGTH] = "";
+					char *writeCursol = str; // データ文字列の書き込みに利用するカーソルです。
 
 					// データ文字列を一つ読みます。
 					while (*charactorCursol && *charactorCursol != ',' && *charactorCursol != '\r'&& *charactorCursol != '\n'){
@@ -742,6 +744,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					}
 					// 書き込んでいる列名の文字列に終端文字を書き込みます。
 					writeCursol[1] = '\0';
+
+					*row[columnNum++] = Data(string(str));
 
 					// 入力行のカンマの分を読み進めます。
 					++charactorCursol;
@@ -758,7 +762,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				currentRow = &inputData[i][0];
 				found = false;
 				while (*currentRow){
-					const char *currentChar = (*currentRow)[j]->string();
+					const char *currentChar = (*currentRow)[j]->string().c_str();
 					while (*currentChar){
 						bool isNum = false;
 						const char *currentNum = signNum.c_str();
@@ -785,7 +789,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				if (!found){
 					currentRow = &inputData[i][0];
 					while (*currentRow){
-						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->value.string));
+						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->string().c_str()));
 						++currentRow;
 					}
 				}
@@ -860,7 +864,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				if (whereExtensionNode.middleOperator.kind == TokenKind::NOT_TOKEN &&
 					whereExtensionNode.column.columnName.empty() &&
 					whereExtensionNode.value.type == DataType::INTEGER) {
-					whereExtensionNode.value.value.integer *= whereExtensionNode.signCoefficient;
+					whereExtensionNode.value = Data(whereExtensionNode.value.integer() * whereExtensionNode.signCoefficient);
 				}
 			}
 		}
@@ -885,7 +889,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 			// 行の各列のデータを入力から持ってきて設定します。
 			for (size_t i = 0; i < selectColumnIndexes.size(); ++i){
-				row[i] = (Data*)malloc(sizeof(Data));
+				row[i] = new Data;
 				if (!row[i]){
 					throw ResultValue::ERR_MEMORY_ALLOCATE;
 				}
@@ -906,7 +910,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			int allColumnsNum = 0; // allColumnsRowの現在の列数です。
 			for (size_t i = 0; i < tableNames.size(); ++i){
 				for (size_t j = 0; j < inputColumns[i].size(); ++j) {
-					allColumnsRow[allColumnsNum] = (Data*)malloc(sizeof(Data));
+					allColumnsRow[allColumnsNum] = new Data;
 					if (!allColumnsRow[allColumnsNum]){
 						throw ResultValue::ERR_MEMORY_ALLOCATE;
 					}
@@ -964,7 +968,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 							;
 							// 符号を考慮して値を計算します。
 							if (currentNode->value.type == DataType::INTEGER){
-								currentNode->value.value.integer *= currentNode->signCoefficient;
+								currentNode->value = Data(currentNode->value.integer() * currentNode->signCoefficient);
 							}
 						}
 						break;
@@ -988,44 +992,44 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						case DataType::INTEGER:
 							switch (currentNode->middleOperator.kind){
 							case TokenKind::EQUAL:
-								currentNode->value.value.boolean = currentNode->left->value.integer() == currentNode->right->value.integer();
+								currentNode->value = Data(currentNode->left->value.integer() == currentNode->right->value.integer());
 								break;
 							case TokenKind::GREATER_THAN:
-								currentNode->value.value.boolean = currentNode->left->value.integer() > currentNode->right->value.integer();
+								currentNode->value = Data(currentNode->left->value.integer() > currentNode->right->value.integer());
 								break;
 							case TokenKind::GREATER_THAN_OR_EQUAL:
-								currentNode->value.value.boolean = currentNode->left->value.integer() >= currentNode->right->value.integer();
+								currentNode->value = Data(currentNode->left->value.integer() >= currentNode->right->value.integer());
 								break;
 							case TokenKind::LESS_THAN:
-								currentNode->value.value.boolean = currentNode->left->value.integer() < currentNode->right->value.integer();
+								currentNode->value = Data(currentNode->left->value.integer() < currentNode->right->value.integer());
 								break;
 							case TokenKind::LESS_THAN_OR_EQUAL:
-								currentNode->value.value.boolean = currentNode->left->value.integer() <= currentNode->right->value.integer();
+								currentNode->value = Data(currentNode->left->value.integer() <= currentNode->right->value.integer());
 								break;
 							case TokenKind::NOT_EQUAL:
-								currentNode->value.value.boolean = currentNode->left->value.integer() != currentNode->right->value.integer();
+								currentNode->value = Data(currentNode->left->value.integer() != currentNode->right->value.integer());
 								break;
 							}
 							break;
 						case DataType::STRING:
 							switch (currentNode->middleOperator.kind){
 							case TokenKind::EQUAL:
-								currentNode->value.value.boolean = strcmp(currentNode->left->value.string(), currentNode->right->value.string()) == 0;
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) == 0);
 								break;
 							case TokenKind::GREATER_THAN:
-								currentNode->value.value.boolean = strcmp(currentNode->left->value.string(), currentNode->right->value.string()) > 0;
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) > 0);
 								break;
 							case TokenKind::GREATER_THAN_OR_EQUAL:
-								currentNode->value.value.boolean = strcmp(currentNode->left->value.string(), currentNode->right->value.string()) >= 0;
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) >= 0);
 								break;
 							case TokenKind::LESS_THAN:
-								currentNode->value.value.boolean = strcmp(currentNode->left->value.string(), currentNode->right->value.string()) < 0;
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) < 0);
 								break;
 							case TokenKind::LESS_THAN_OR_EQUAL:
-								currentNode->value.value.boolean = strcmp(currentNode->left->value.string(), currentNode->right->value.string()) <= 0;
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) <= 0);
 								break;
 							case TokenKind::NOT_EQUAL:
-								currentNode->value.value.boolean = strcmp(currentNode->left->value.string(), currentNode->right->value.string()) != 0;
+								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) != 0);
 								break;
 							}
 							break;
@@ -1046,16 +1050,16 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						// 比較結果を演算子によって計算方法を変えて、計算します。
 						switch (currentNode->middleOperator.kind){
 						case TokenKind::PLUS:
-							currentNode->value.value.integer = currentNode->left->value.integer() + currentNode->right->value.integer();
+							currentNode->value = Data(currentNode->left->value.integer() + currentNode->right->value.integer());
 							break;
 						case TokenKind::MINUS:
-							currentNode->value.value.integer = currentNode->left->value.integer() - currentNode->right->value.integer();
+							currentNode->value = Data(currentNode->left->value.integer() - currentNode->right->value.integer());
 							break;
 						case TokenKind::ASTERISK:
-							currentNode->value.value.integer = currentNode->left->value.integer() * currentNode->right->value.integer();
+							currentNode->value = Data(currentNode->left->value.integer() * currentNode->right->value.integer());
 							break;
 						case TokenKind::SLASH:
-							currentNode->value.value.integer = currentNode->left->value.integer() / currentNode->right->value.integer();
+							currentNode->value = Data(currentNode->left->value.integer() / currentNode->right->value.integer());
 							break;
 						}
 						break;
@@ -1072,10 +1076,10 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						// 比較結果を演算子によって計算方法を変えて、計算します。
 						switch (currentNode->middleOperator.kind){
 						case TokenKind::AND:
-							currentNode->value.value.boolean = currentNode->left->value.boolean() && currentNode->right->value.boolean();
+							currentNode->value = Data(currentNode->left->value.boolean() && currentNode->right->value.boolean());
 							break;
 						case TokenKind::OR:
-							currentNode->value.value.boolean = currentNode->left->value.boolean() || currentNode->right->value.boolean();
+							currentNode->value = Data(currentNode->left->value.boolean() || currentNode->right->value.boolean());
 							break;
 						}
 					}
@@ -1171,7 +1175,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 							cmp = jData->integer() - mData->integer();
 							break;
 						case DataType::STRING:
-							cmp = strcmp(jData->value.string, mData->string());
+							cmp = strcmp(jData->string().c_str(), mData->string().c_str());
 							break;
 						}
 
@@ -1238,7 +1242,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					itoa((*column)->integer(), outputString, 10);
 					break;
 				case DataType::STRING:
-					strcpy(outputString, (*column)->string());
+					strcpy(outputString, (*column)->string().c_str());
 					break;
 				}
 				result = fputs(outputString, outputFile);
@@ -1289,7 +1293,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			while (*currentRow){
 				Data **dataCursol = *currentRow;
 				while (*dataCursol){
-					free(*dataCursol++);
+					delete *dataCursol++;
 				}
 				free(*currentRow);
 				currentRow++;
@@ -1301,7 +1305,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			while (*currentRow){
 				Data **dataCursol = *currentRow;
 				while (*dataCursol){
-					free(*dataCursol++);
+					delete *dataCursol++;
 				}
 				free(*currentRow);
 				currentRow++;
@@ -1311,7 +1315,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		while (*currentRow){
 			Data **dataCursol = *currentRow;
 			while (*dataCursol){
-				free(*dataCursol++);
+				delete *dataCursol++;
 			}
 			free(*currentRow);
 			currentRow++;
@@ -1339,7 +1343,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			while (*currentRow){
 				Data **dataCursol = *currentRow;
 				while (*dataCursol){
-					free(*dataCursol++);
+					delete *dataCursol++;
 				}
 				free(*currentRow);
 				currentRow++;
@@ -1351,7 +1355,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			while (*currentRow && currentRow && currentRow - &outputData[0] < (int)outputData.size()){
 				Data **dataCursol = *currentRow;
 				while (*dataCursol){
-					free(*dataCursol++);
+					delete *dataCursol++;
 				}
 				free(*currentRow);
 				currentRow++;
@@ -1363,7 +1367,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			while (*currentRow && currentRow - &allColumnOutputData[0] < (int)allColumnOutputData.size()){
 				Data **dataCursol = *currentRow;
 				while (*dataCursol){
-					free(*dataCursol++);
+					delete *dataCursol++;
 				}
 				free(*currentRow);
 				currentRow++;
