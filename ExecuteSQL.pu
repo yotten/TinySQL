@@ -4,6 +4,7 @@ class testExecuteSQL {}
 class ExecuteSQL {}
 class Data {
     +DataType type
+	-char m_string[MAX_DATA_LENGTH]
 	-union value
 	+Data(const char* value)
 	+Data(const int value)

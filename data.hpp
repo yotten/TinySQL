@@ -12,10 +12,11 @@ enum class DataType
 
 //! 一つの値を持つデータです。
 class Data {
+	char m_string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
+
 	//! 実際のデータを格納する共用体です。
 	union
 	{
-		char string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
 		int integer;                  //!< データが整数型の場合の値です。
 		bool boolean;                 //!< データが真偽値型の場合の値です。
 	} m_value;

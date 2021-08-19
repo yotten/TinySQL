@@ -4,15 +4,15 @@
 #include <cstring>
 
 //! Dataクラスの新しいインスタンスを初期化
-Data::Data()
+Data::Data() : m_value({0})
 {
 
 }
 
 //! Dataクラスの新しいインスタンスを初期化
-Data::Data(const char* value)
+Data::Data(const char* value) : m_value({0})
 {
-    strncpy(m_value.string, value, std::max(MAX_DATA_LENGTH, MAX_WORD_LENGTH));
+    strncpy(m_string, value, std::max(MAX_DATA_LENGTH, MAX_WORD_LENGTH));
 }
 
 //! Dataクラスの新しいインスタンスを初期化
@@ -33,7 +33,7 @@ Data::Data(const bool value) :type(DataType::BOOLEAN)
 //! @return データが文字列型の場合の値です。
 const char* Data::string() const
 {
-    return m_value.string;
+    return m_string;
 }
 
 //! データが整数型の場合の値を取得します。
