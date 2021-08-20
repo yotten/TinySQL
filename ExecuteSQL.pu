@@ -4,8 +4,6 @@ class testExecuteSQL {}
 class ExecuteSQL {
 	-vector<ifstream> inputTableFiles
 	-ofstream outputFile
-	-const char* charactorBackPoint
-	-const char* charactorCursol
 }	
 class Data {
     +DataType type
