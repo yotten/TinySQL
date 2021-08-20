@@ -219,33 +219,15 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 			// 先頭文字が数字であるかどうかを確認します。
 			sqlBackPoint = sqlCursol;
-			for (search = num.c_str(); *search && *sqlCursol != *search; ++search){}
-			if (*search){
-				Token literal{TokenKind::INT_LITERAL}; // 読み込んだ数値リテラルの情報です。
-				int wordLength = 0; // 数値リテラルに現在読み込んでいる文字の数です。
-
-				// 数字が続く間、文字を読み込み続けます。
-				do {
-					for (search = num.c_str(); *search && *sqlCursol  != *search; ++search){}
-					if (*search){
-						if (MAX_WORD_LENGTH - 1 <= wordLength){
-							throw ResultValue::ERR_MEMORY_OVER;
-						}
-						literal.word[wordLength++] = *search;
-						++sqlCursol ;
-					}
-				} while (*search);
-
-				// 数字の後にすぐに識別子が続くのは紛らわしいので数値リテラルとは扱いません。
-				for (search = alpahUnder.c_str(); *search && sqlCursol != sqlEnd && *sqlCursol != *search; ++search){}
-				if (!*search){
-					literal.word[wordLength] = '\0';
-					tokens.push_back(literal);
+			sqlCursol = find_if(sqlCursol, sqlEnd, [&](char c){return num.find(c) == string::npos;});
+			if (sqlCursol != sqlBackPoint && (
+				alpahUnder.find(*sqlCursol) == string::npos || // 数字の後にすぐに識別子が続くのは紛らわしいので数値リテラルとは扱いません。
+				sqlCursol == sqlEnd)) {
+					tokens.push_back(Token(TokenKind::INT_LITERAL, string(sqlBackPoint, sqlCursol)));
 					continue;
-				}
-				else{
-					sqlCursol = sqlBackPoint;
-				}
+			}
+			else {
+				sqlCursol = sqlBackPoint;
 			}
 
 			// 文字列リテラルを読み込みます。
