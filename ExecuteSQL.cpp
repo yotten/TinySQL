@@ -5,6 +5,8 @@
 #include "extension_tree_node.hpp"
 #include "column_index.hpp"
 
+#include <fstream>
+#include <sstream>
 #include <cstring>
 #include <algorithm>
 #include <vector>
@@ -120,7 +122,7 @@ static char *itoa(int n, char *buffer, int radix)
 //! FROM USERS, CHILDREN                                                                                     @n
 int ExecuteSQL(const string sql, const string outputFileName)
 {
-	vector<FILE *> inputTableFiles;								// 読み込む入力ファイルの全てのファイルポインタです。
+	vector<ifstream> inputTableFiles;							// 読み込むファイルの全ての入力ストリーム
 	FILE *outputFile = nullptr;                                // 書き込むファイルのファイルポインタです。
 	int result = 0;                                         // 関数の戻り値を一時的に保存します。
 	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
@@ -672,31 +674,32 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			const string fileName = tableNames[i] + csvExtension; // 拡張子を含む、入力ファイルのファイル名です。
 
 			// 入力ファイルを開きます。
-			inputTableFiles.push_back(fopen(fileName.c_str(), "r"));
+			inputTableFiles.push_back(ifstream(fileName));
 			if (!inputTableFiles.back()) {
 				throw ResultValue::ERR_FILE_OPEN;
 			}
 
 			// 入力CSVのヘッダ行を読み込みます。
 			inputColumns.push_back(vector<Column>());
-			char inputLineBuffer[MAX_FILE_LINE_LENGTH] = ""; // ファイルから読み込んだ行文字列です。
-			if (fgets(inputLineBuffer, MAX_FILE_LINE_LENGTH, inputTableFiles.back())){
-				string inputLine = inputLineBuffer;
+			string inputLine; // ファイルから読み込んだ行文字列です。
+			if (getline(inputTableFiles.back(), inputLine)) {
 				charactorCursol = inputLine.c_str();
 
 				// 読み込んだ行を最後まで読みます。
-				while (*charactorCursol && *charactorCursol != '\r' && *charactorCursol != '\n'){
+				while (*charactorCursol){
 					string columnName;
 
 					// 列名を一つ読みます。
-					while (*charactorCursol && *charactorCursol != ',' && *charactorCursol != '\r'&& *charactorCursol != '\n'){
+					while (*charactorCursol && *charactorCursol != ','){
 						columnName.push_back(*charactorCursol++);
 					}
 					// 書き込んでいる列名の文字列に終端文字を書き込みます。
 					inputColumns[i].push_back(Column(tableNames[i], columnName));
 
 					// 入力行のカンマの分を読み進めます。
-					++charactorCursol;
+					if (*charactorCursol) {
+						++charactorCursol;
+					}
 				}
 			}
 			else{
@@ -706,8 +709,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			// 入力CSVのデータ行を読み込みます。
 			inputData.push_back(vector<Data**>());
 
-			while (fgets(inputLineBuffer, MAX_FILE_LINE_LENGTH, inputTableFiles.back())) {
-				string inputLine = inputLineBuffer;
+			while (getline(inputTableFiles.back(), inputLine)) {
 				inputData[i].push_back((Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*))); // 入力されている一行分のデータです。
 				Data **row = inputData[i].back();
 
@@ -720,7 +722,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				int columnNum = 0; // いま何列目を読み込んでいるか。0基底の数字となります。
 
 				// 読み込んだ行を最後まで読みます。
-				while (*charactorCursol && *charactorCursol != '\r'&& *charactorCursol != '\n'){
+				while (*charactorCursol){
 
 					// 読み込んだデータを書き込む行のカラムを生成します。
 					if (MAX_COLUMN_COUNT <= columnNum){
@@ -735,7 +737,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					char *writeCursol = str; // データ文字列の書き込みに利用するカーソルです。
 
 					// データ文字列を一つ読みます。
-					while (*charactorCursol && *charactorCursol != ',' && *charactorCursol != '\r'&& *charactorCursol != '\n'){
+					while (*charactorCursol && *charactorCursol != ','){
 						*writeCursol++ = *charactorCursol++;
 					}
 					// 書き込んでいる列名の文字列に終端文字を書き込みます。
@@ -744,7 +746,9 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					*row[columnNum++] = Data(string(str));
 
 					// 入力行のカンマの分を読み進めます。
-					++charactorCursol;
+					if (*charactorCursol) {
+						++charactorCursol;
+					}
 				}
 			}
 
@@ -1267,8 +1271,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		// ファイルリソースを解放します。
 		for (auto &inputTableFile : inputTableFiles) {
 			if (inputTableFile) {
-				fclose(inputTableFile);
-				if (result == EOF){
+				inputTableFile.close();
+				if (inputTableFile.bad()) {
 					throw ResultValue::ERR_FILE_CLOSE;
 				}
 			}
@@ -1320,12 +1324,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		return static_cast<int>(ResultValue::OK);
 	}
 	catch (ResultValue error) {
-		// ファイルリソースを解放します。
-		for (auto &inputTableFile : inputTableFiles) {
-			if (inputTableFile) {
-				fclose(inputTableFile);
-			}
-		}
 		if (outputFile){
 			fclose(outputFile);
 		}

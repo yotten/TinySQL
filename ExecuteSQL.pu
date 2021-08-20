@@ -1,7 +1,9 @@
 @startuml
 
 class testExecuteSQL {}
-class ExecuteSQL {}
+class ExecuteSQL {
+	-vector<ifstream> inputTableFiles
+}
 class Data {
     +DataType type
 	-string m_string
