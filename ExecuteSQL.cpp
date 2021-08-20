@@ -123,8 +123,7 @@ static char *itoa(int n, char *buffer, int radix)
 int ExecuteSQL(const string sql, const string outputFileName)
 {
 	vector<ifstream> inputTableFiles;							// 読み込むファイルの全ての入力ストリーム
-	FILE *outputFile = nullptr;                                // 書き込むファイルのファイルポインタです。
-	int result = 0;                                         // 関数の戻り値を一時的に保存します。
+	ofstream outputFile;										// 書き込むファイルのファイルポインタです。
 	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
 	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
 	Data ***currentRow = nullptr;                              // データ検索時に現在見ている行を表します。
@@ -1206,28 +1205,19 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// 出力ファイルを開きます。
-		outputFile = fopen(outputFileName.c_str(), "w");
-		if (outputFile == nullptr){
+		outputFile = ofstream(outputFileName);
+		if (outputFile.bad()){
 			throw ResultValue::ERR_FILE_OPEN;
 		}
 
 		// 出力ファイルに列名を出力します。
 		for (size_t i = 0; i < selectColumns.size(); ++i){
-			result = fputs(outputColumns[i].columnName.c_str(), outputFile);
-			if (result == EOF){
-				throw ResultValue::ERR_FILE_WRITE;
-			}
+			outputFile << outputColumns[i].columnName;
 			if (i < selectColumns.size() - 1){
-				result = fputs(",", outputFile);
-				if (result == EOF){
-					throw ResultValue::ERR_FILE_WRITE;
-				}
+				outputFile << ",";
 			}
 			else{
-				result = fputs("\n", outputFile);
-				if (result == EOF){
-					throw ResultValue::ERR_FILE_WRITE;
-				}
+				outputFile << "\n";
 			}
 		}
 
@@ -1245,25 +1235,21 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					strcpy(outputString, (*column)->string().c_str());
 					break;
 				}
-				result = fputs(outputString, outputFile);
-				if (result == EOF){
-					throw ResultValue::ERR_FILE_WRITE;
-				}
+
+				outputFile << outputString;
+
 				if (i < selectColumns.size() - 1){
-					result = fputs(",", outputFile);
-					if (result == EOF){
-						throw ResultValue::ERR_FILE_WRITE;
-					}
+					outputFile << ",";
 				}
 				else{
-					result = fputs("\n", outputFile);
-					if (result == EOF){
-						throw ResultValue::ERR_FILE_WRITE;
-					}
+					outputFile << "\n";
 				}
 				++column;
 			}
 			++currentRow;
+		}
+		if (outputFile.bad()){
+			throw ResultValue::ERR_FILE_WRITE;
 		}
 
 		// 正常時の後処理です。
@@ -1278,8 +1264,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 		}
 		if (outputFile){
-			fclose(outputFile);
-			if (result == EOF){
+			outputFile.close();
+			if (outputFile.bad()){
 				throw ResultValue::ERR_FILE_CLOSE;
 			}
 		}
@@ -1324,10 +1310,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		return static_cast<int>(ResultValue::OK);
 	}
 	catch (ResultValue error) {
-		if (outputFile){
-			fclose(outputFile);
-		}
-
 		// メモリリソースを解放します。
 		for (auto& inputTableData : inputData){
 			if (inputTableData.empty()){

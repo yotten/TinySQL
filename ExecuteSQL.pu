@@ -3,7 +3,8 @@
 class testExecuteSQL {}
 class ExecuteSQL {
 	-vector<ifstream> inputTableFiles
-}
+	-ofstream outputFile
+}	
 class Data {
     +DataType type
 	-string m_string
