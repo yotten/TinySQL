@@ -7,16 +7,18 @@
 
 #include "ExecuteSQL.hpp"
 
-#define DISABLED_TestNo16 TestNo16
-//#define DISABLED_TestNo17 TestNo17
-//#define DISABLED_TestNo19 TestNo19
-#define DISABLED_TestNo30 TestNo30
-#define DISABLED_TestNo58 TestNo58
-//#define DISABLED_TestNo65 TestNo65
-//#define DISABLED_TestNo66 TestNo66
-//#define DISABLED_TestNo67 TestNo67
-//#define DISABLED_TestNo68 TestNo68
-#define DISABLED_TestNo160 TestNo160
+//#define TestNo16 DISABLED_TestNo16
+//#define TestNo17 DISABLED_TestNo17
+#define TestNo19 DISABLED_TestNo19
+//#define TestNo30 DISABLED_TestNo30
+//#define TestNo58 DISABLED_TestNo58
+//#define TestNo65 DISABLED_TestNo65
+//#define TestNo66 DISABLED_TestNo66
+//#define TestNo67 DISABLED_TestNo67
+//#define TestNo68 DISABLED_TestNo68
+#define TestNo114 DISABLED_TestNo114
+#define TestNo115 DISABLED_TestNo115
+//#define TestNo160 DISABLED_TestNo160
 
 //! ExecuteSQLの戻り値の種類を表します。
 enum REAULT_VALUE
@@ -338,7 +340,7 @@ TEST_F(MyTest, TestNo15) { //ExecuteSQLは三つ以上のテーブルを読み�
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, DISABLED_TestNo16) { //ExecuteSQLはSQLECT句にテーブルと一緒に指定した列名を指定し、SQLを実行できます。)
+TEST_F(MyTest, TestNo16) { //ExecuteSQLはSQLECT句にテーブルと一緒に指定した列名を指定し、SQLを実行できます。)
     const string sql =
         "SELECT String "
         "FROM TABLE1";
@@ -354,7 +356,7 @@ TEST_F(MyTest, DISABLED_TestNo16) { //ExecuteSQLはSQLECT句にテーブルと�
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, DISABLED_TestNo17) { //ExecuteSQLはSQLECT句に複数のテーブルと一緒に指定した列名を指定し、SQLを実行できます。)
+TEST_F(MyTest, TestNo17) { //ExecuteSQLはSQLECT句に複数のテーブルと一緒に指定した列名を指定し、SQLを実行できます。)
     const string sql =
         "SELECT String,Integer "
         "FROM TABLE1";
@@ -386,7 +388,7 @@ TEST_F(MyTest, TestNo18) { //ExecuteSQLはSQLECT句に三つ以上のテーブ�
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, DISABLED_TestNo19) { //ExecuteSQLはSELECTの指定にテーブル名も指定できます。)
+TEST_F(MyTest, TestNo19) { //ExecuteSQLはSELECTの指定にテーブル名も指定できます。)
     const string sql =
         "SELECT TABLE1.Integer "
         "FROM TABLE1";
@@ -518,7 +520,7 @@ TEST_F(MyTest, TestNo29) { //ExecuteSQLはSELECTで指定したテーブル名�
 
     ASSERT_EQ((int)ERR_BAD_COLUMN_NAME, result);
 }
-TEST_F(MyTest, DISABLED_TestNo30) { //ExecuteSQLはSELECTで指定したテーブル名の指定の最終文字の違いを見分けます。)
+TEST_F(MyTest, TestNo30) { //ExecuteSQLはSELECTで指定したテーブル名の指定の最終文字の違いを見分けます。)
     const string sql =
         "SELECT TABLE2.Integer "
         "FROM TABLE1";
@@ -924,7 +926,7 @@ TEST_F(MyTest, TestNo57) { //ExecuteSQLはORDERBYで曖昧なテーブルと一�
 
     ASSERT_EQ((int)ERR_BAD_COLUMN_NAME, result);
 }
-TEST_F(MyTest, DISABLED_TestNo58) { //ExecuteSQLはWHERE句で数値列に対する条件として文字列は指定できません。)
+TEST_F(MyTest, TestNo58) { //ExecuteSQLはWHERE句で数値列に対する条件として文字列は指定できません。)
     const string sql =
         "SELECT * "
         "WHERE Integer = \'2\' "
@@ -1027,7 +1029,7 @@ TEST_F(MyTest, TestNo64) { //ExecuteSQLはWHERE句で数値として以下の条
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, DISABLED_TestNo65) { //ExecuteSQLはWHERE句でマイナスの数値が扱えます。)
+TEST_F(MyTest, TestNo65) { //ExecuteSQLはWHERE句でマイナスの数値が扱えます。)
     const string sql =
         "SELECT * "
         "WHERE Integer < -3 "
@@ -1044,7 +1046,7 @@ TEST_F(MyTest, DISABLED_TestNo65) { //ExecuteSQLはWHERE句でマイナスの数
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, DISABLED_TestNo66) { //ExecuteSQLはWHERE句でプラスを明示したの数値が扱えます。)
+TEST_F(MyTest, TestNo66) { //ExecuteSQLはWHERE句でプラスを明示したの数値が扱えます。)
     const string sql =
         "SELECT * "
         "WHERE Integer <= +2 "
@@ -1060,7 +1062,7 @@ TEST_F(MyTest, DISABLED_TestNo66) { //ExecuteSQLはWHERE句でプラスを明示
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, DISABLED_TestNo67) { //ExecuteSQLはWHERE句でマイナスを指定したの列名が扱えます。)
+TEST_F(MyTest, TestNo67) { //ExecuteSQLはWHERE句でマイナスを指定したの列名が扱えます。)
     const string sql =
         "SELECT * "
         "WHERE -Integer > 3 "
@@ -1077,7 +1079,7 @@ TEST_F(MyTest, DISABLED_TestNo67) { //ExecuteSQLはWHERE句でマイナスを指
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, DISABLED_TestNo68) { //ExecuteSQLはWHERE句でプラスを明示した列名が扱えます。)
+TEST_F(MyTest, TestNo68) { //ExecuteSQLはWHERE句でプラスを明示した列名が扱えます。)
     const string sql =
         "SELECT * "
         "WHERE +Integer <= 2 "
@@ -2274,7 +2276,7 @@ TEST_F(MyTest, TestNo159) { //ExecuteSQLはDESCキーワードを、大文字で
     ASSERT_EQ((int)OK, result);
     EXPECT_EQ(expectedCsv, ReadOutput());
 }
-TEST_F(MyTest, DISABLED_TestNo160) { //ExecuteSQLはWHEREキーワードを、大文字でも小文字でも識別します。)
+TEST_F(MyTest, TestNo160) { //ExecuteSQLはWHEREキーワードを、大文字でも小文字でも識別します。)
    const string sql =
         "SELECT * "
         "where Integer = 2 "
