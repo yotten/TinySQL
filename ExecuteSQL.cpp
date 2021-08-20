@@ -17,7 +17,6 @@
 
 //#pragma warning(disable:4996)
 
-#define MAX_FILE_LINE_LENGTH 4096          //!< 読み込むファイルの一行の最大長です。
 #define MAX_COLUMN_COUNT 16                //!< 入出力されるデータに含まれる列の最大数です。
 #define MAX_TABLE_COUNT 8                  //!< CSVとして入力されるテーブルの最大数です。
 
@@ -684,21 +683,22 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			inputColumns.push_back(vector<Column>());
 			string inputLine; // ファイルから読み込んだ行文字列です。
 			if (getline(inputTableFiles.back(), inputLine)) {
-				const char* charactorCursol = inputLine.c_str();
+				auto charactorCursol = inputLine.begin();
+				auto lineEnd = inputLine.end();
 
 				// 読み込んだ行を最後まで読みます。
-				while (*charactorCursol){
+				while (charactorCursol != lineEnd){
 					string columnName;
 
 					// 列名を一つ読みます。
-					while (*charactorCursol && *charactorCursol != ','){
+					while (charactorCursol != lineEnd && *charactorCursol != ','){
 						columnName.push_back(*charactorCursol++);
 					}
 					// 書き込んでいる列名の文字列に終端文字を書き込みます。
 					inputColumns[i].push_back(Column(tableNames[i], columnName));
 
 					// 入力行のカンマの分を読み進めます。
-					if (*charactorCursol) {
+					if (charactorCursol != lineEnd) {
 						++charactorCursol;
 					}
 				}
