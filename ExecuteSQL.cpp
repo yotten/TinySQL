@@ -300,33 +300,11 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 
 			// 識別子を読み込みます。
-
-			// 識別子の最初の文字を確認します。
-			for (search = alpahUnder.c_str(); *search && sqlCursol != sqlEnd && *sqlCursol != *search; ++search){};
-			if (*search && (sqlCursol != sqlEnd)){
-				Token identifier{ TokenKind::IDENTIFIER }; // 読み込んだ識別子の情報です。
-				int wordLength = 0; // 識別子に現在読み込んでいる文字の数です。
-				do {
-					// 二文字目以降は数字も許可して文字の種類を確認します。
-					for (search = alpahNumUnder.c_str(); *search && sqlCursol != sqlEnd && *sqlCursol != *search; ++search){};
-					if (*search && (sqlCursol != sqlEnd)){
-						if (MAX_WORD_LENGTH - 1 <= wordLength){
-							throw ResultValue::ERR_MEMORY_OVER;
-						}
-						identifier.word[wordLength++] = *search;
-						sqlCursol++;
-					}
-				} while (*search && (sqlCursol != sqlEnd));
-
-				// 識別子の文字列の終端文字を設定します。
-				identifier.word[wordLength] = '\0';
-
-				// 読み込んだ識別子を登録します。
-				tokens.push_back(identifier);
+			sqlBackPoint = sqlCursol;
+			if (alpahUnder.find(*sqlCursol++) != string::npos) {
+				sqlCursol = find_if(sqlCursol, sqlEnd, [&](const char c){return alpahNumUnder.find(c) == string::npos;});
+				tokens.push_back(Token(TokenKind::IDENTIFIER, string(sqlBackPoint, sqlCursol)));
 				continue;
-			}
-			else{
-				sqlCursol = sqlBackPoint;
 			}
 
 			throw ResultValue::ERR_TOKEN_CANT_READ;
