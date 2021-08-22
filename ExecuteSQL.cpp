@@ -286,25 +286,36 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 
 			// 記号を読み込みます。
-			found = false;
-			for (auto &signCondition : signConditions) {
-				sqlBackPoint = sqlCursol;
-				const char *wordCursol = signCondition.word.c_str(); // 確認する記号の文字列のうち、現在確認している一文字を指します。
+			// found = false;
+			// for (auto &signCondition : signConditions) {
+			// 	sqlBackPoint = sqlCursol;
+			// 	const char *wordCursol = signCondition.word.c_str(); // 確認する記号の文字列のうち、現在確認している一文字を指します。
 
-				// 記号が指定した文字列となっているか確認します。
-				while (*wordCursol && toupper(*sqlCursol++) == *wordCursol){
-					++wordCursol;
+			// 	// 記号が指定した文字列となっているか確認します。
+			// 	while (*wordCursol && toupper(*sqlCursol++) == *wordCursol){
+			// 		++wordCursol;
+			// 	}
+			// 	if (!*wordCursol){
+			// 		// 見つかった記号を生成します。
+			// 		tokens.push_back(Token(signCondition.kind));
+			// 		found = true;
+			auto sign = find_if(signConditions.begin(), signConditions.end(),
+				[&](Token keyword) {
+					auto result = mismatch(keyword.word.begin(), keyword.word.end(), sqlCursol,
+						[](const char keywordChar, const char sqlChar){return keywordChar == toupper(sqlChar);});
+
+					if (result.first == keyword.word.end()) {
+						sqlCursol = result.second;
+						return true;
+					}
+					else {
+						return false;
+					}
 				}
-				if (!*wordCursol){
-					// 見つかった記号を生成します。
-					tokens.push_back(Token(signCondition.kind));
-					found = true;
-				}
-				else{
-					sqlCursol = sqlBackPoint;
-				}
-			}
-			if (found){
+			);
+			
+			if (sign != signConditions.end()) {
+				tokens.push_back(Token(sign->kind));
 				continue;
 			}
 
