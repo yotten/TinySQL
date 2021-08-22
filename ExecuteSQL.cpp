@@ -197,7 +197,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	vector<Data ***> currentRows;// 入力された各テーブルの、現在出力している行を指すカーソルです。
 	ExtensionTreeNode *whereTopNode = nullptr; // 式木の根となるノードです。
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
-	Token *tokenCursol; 	// 現在見ているトークンを指します。
+	//Token *tokenCursol; 	// 現在見ているトークンを指します。
 	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
 	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
 
@@ -251,22 +251,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 			// キーワードを読み込みます。
 			found = false;
-			// for (auto & keywordCondition : keywordConditions) {
-			// 	sqlBackPoint = sqlCursol;
-			// 	const char *wordCursol = keywordCondition.word.c_str();
 
-			// 	// キーワードが指定した文字列となっているか確認します。
-			// 	while (*wordCursol && toupper(*sqlCursol++) == *wordCursol){
-			// 		++wordCursol;
-			// 	}
-
-			// 	// キーワードに識別子が区切りなしに続いていないかを確認するため、キーワードの終わった一文字あとを調べます。
-			// 	for (search = alpahNumUnder.c_str(); *search && *sqlCursol != *search; ++search){};
-
-			// 	if (!*wordCursol && !*search){
-			// 		// 見つかったキーワードを生成します。
-			// 		tokens.push_back(Token(keywordCondition.kind));
-			// 		found = true;
 			auto keyword = find_if(keywordConditions.begin(), keywordConditions.end(),
 				[&](Token keyword) {
 					auto result = mismatch(keyword.word.begin(), keyword.word.end(), sqlCursol,
@@ -286,19 +271,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 
 			// 記号を読み込みます。
-			// found = false;
-			// for (auto &signCondition : signConditions) {
-			// 	sqlBackPoint = sqlCursol;
-			// 	const char *wordCursol = signCondition.word.c_str(); // 確認する記号の文字列のうち、現在確認している一文字を指します。
-
-			// 	// 記号が指定した文字列となっているか確認します。
-			// 	while (*wordCursol && toupper(*sqlCursol++) == *wordCursol){
-			// 		++wordCursol;
-			// 	}
-			// 	if (!*wordCursol){
-			// 		// 見つかった記号を生成します。
-			// 		tokens.push_back(Token(signCondition.kind));
-			// 		found = true;
 			auto sign = find_if(signConditions.begin(), signConditions.end(),
 				[&](Token keyword) {
 					auto result = mismatch(keyword.word.begin(), keyword.word.end(), sqlCursol,
@@ -331,7 +303,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// トークン列を解析し、構文を読み取ります。
-		tokenCursol = &tokens[0];
+		auto tokenCursol = tokens.begin();
 		vector<Column> selectColumns; // SELECT句に指定された列名です。
 		vector<Column> orderByColumns; // ORDER句に指定された列名です。
 		list<ExtensionTreeNode> whereExtensionNodes;
@@ -611,7 +583,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
-		while (tokenCursol->kind == TokenKind::COMMA || first){
+		while (tokenCursol != tokens.end() && tokenCursol->kind == TokenKind::COMMA || first){
 			if (tokenCursol->kind == TokenKind::COMMA){
 				++tokenCursol;
 			}
@@ -626,7 +598,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// 最後のトークンまで読み込みが進んでいなかったらエラーです。
-		if (tokenCursol <= &tokens.back()) {
+		if (tokenCursol != tokens.end()) {
 			throw ResultValue::ERR_SQL_SYNTAX;
 		}
 
