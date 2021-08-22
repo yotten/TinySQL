@@ -8,16 +8,16 @@
 #include "ExecuteSQL.hpp"
 
 //#define TestNo16 DISABLED_TestNo16
-//#define TestNo17 DISABLED_TestNo17
+#define TestNo17 DISABLED_TestNo17
 #define TestNo19 DISABLED_TestNo19
 //#define TestNo30 DISABLED_TestNo30
 //#define TestNo58 DISABLED_TestNo58
-//#define TestNo65 DISABLED_TestNo65
-//#define TestNo66 DISABLED_TestNo66
-//#define TestNo67 DISABLED_TestNo67
-//#define TestNo68 DISABLED_TestNo68
-#define TestNo114 DISABLED_TestNo114
-#define TestNo115 DISABLED_TestNo115
+#define TestNo65 DISABLED_TestNo65
+#define TestNo66 DISABLED_TestNo66
+#define TestNo67 DISABLED_TestNo67
+#define TestNo68 DISABLED_TestNo68
+//#define TestNo114 DISABLED_TestNo114
+//#define TestNo115 DISABLED_TestNo115
 //#define TestNo160 DISABLED_TestNo160
 
 //! ExecuteSQLの戻り値の種類を表します。

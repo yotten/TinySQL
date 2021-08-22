@@ -253,7 +253,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			found = false;
 			for (auto & keywordCondition : keywordConditions) {
 				sqlBackPoint = sqlCursol;
-				const char *wordCursol = keywordCondition.word;
+				const char *wordCursol = keywordCondition.word.c_str();
 
 				// キーワードが指定した文字列となっているか確認します。
 				while (*wordCursol && toupper(*sqlCursol++) == *wordCursol){
@@ -280,7 +280,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			found = false;
 			for (auto &signCondition : signConditions) {
 				sqlBackPoint = sqlCursol;
-				const char *wordCursol = signCondition.word; // 確認する記号の文字列のうち、現在確認している一文字を指します。
+				const char *wordCursol = signCondition.word.c_str(); // 確認する記号の文字列のうち、現在確認している一文字を指します。
 
 				// 記号が指定した文字列となっているか確認します。
 				while (*wordCursol && toupper(*sqlCursol++) == *wordCursol){
@@ -338,7 +338,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				}
 				if (tokenCursol->kind == TokenKind::IDENTIFIER){
 					// テーブル名が指定されていない場合と仮定して読み込みます。
-					selectColumns.push_back(Column(tokenCursol->word));
+					selectColumns.push_back(Column(tokenCursol->word.c_str()));
 					++tokenCursol;
 					if (tokenCursol->kind == TokenKind::DOT){
 						++tokenCursol;
@@ -485,7 +485,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						}
 					}
 					else if (tokenCursol->kind == TokenKind::INT_LITERAL){
-						currentNode->value = Data(atoi(tokenCursol->word));
+						currentNode->value = Data(atoi(tokenCursol->word.c_str()));
 						++tokenCursol;
 					}
 					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){

@@ -7,7 +7,7 @@
 class Token {
 public:
 	TokenKind kind; //!< トークンの種類です。
-	char word[MAX_WORD_LENGTH]; //!< 記録されているトークンの文字列です。記録の必要がなければ空白です。
+	std::string word; //!< 記録されているトークンの文字列です。記録の必要がなければ空白です。
 
 	//! Tokenクラスの新しいインスタンスを初期化します。
 	Token();
