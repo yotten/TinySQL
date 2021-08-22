@@ -22,7 +22,7 @@ class Operator{
 }
 class Token{
     +TokenKind kind
-    +char word[MAX_WORD_LENGTH]
+    +string word;
 }
 class ExtensionTreeNode{}
 class ColumnIndex{
