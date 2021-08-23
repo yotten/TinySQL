@@ -24,7 +24,16 @@ class Token{
     +TokenKind kind
     +string word;
 }
-class ExtensionTreeNode{}
+class ExtensionTreeNode{
+	+ExtensionTreeNode *parent
+	+ExtensionTreeNode *left
+	+Operator middleOperator
+	+ExtensionTreeNode *right
+	+bool inParen
+	+int parenOpenBeforeClose
+	+int signCoefficient
+	+ExtensionTreeNode()
+}
 class ColumnIndex{
     +int table
     +int column
