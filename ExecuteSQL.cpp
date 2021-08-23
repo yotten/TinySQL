@@ -196,7 +196,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 	vector<TokenKind> orders;
 	vector<Data ***> currentRows;// 入力された各テーブルの、現在出力している行を指すカーソルです。
-	ExtensionTreeNode *whereTopNode = nullptr; // 式木の根となるノードです。
+	shared_ptr<ExtensionTreeNode> whereTopNode; // 式木の根となるノードです。
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
 	//Token *tokenCursol; 	// 現在見ているトークンを指します。
 	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
@@ -422,7 +422,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			if (tokenCursol->kind == TokenKind::WHERE){
 				readWhere = true;
 				++tokenCursol;
-				ExtensionTreeNode *currentNode = nullptr; // 現在読み込んでいるノードです。
+				shared_ptr<ExtensionTreeNode> currentNode; // 現在読み込んでいるノードです。
 				while (true){
 					// オペランドを読み込みます。
 
@@ -430,13 +430,13 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
 					if (currentNode){
 						// 現在のノードを右の子にずらし、元の位置に新しいノードを挿入します。
-						currentNode->right = whereExtensionNodes.back().get();
+						currentNode->right = whereExtensionNodes.back();
 						currentNode->right->parent = currentNode;
 						currentNode = currentNode->right;
 					}
 					else{
 						// 最初はカレントノードに新しいノードを入れます。
-						currentNode = whereExtensionNodes.back().get();
+						currentNode = whereExtensionNodes.back();
 					}
 
 					// カッコ開くを読み込みます。
@@ -493,11 +493,11 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 					// オペランドの右のカッコ閉じるを読み込みます。
 					while (tokenCursol->kind == TokenKind::CLOSE_PAREN){
-						ExtensionTreeNode *searchedAncestor = currentNode->parent; // カッコ閉じると対応するカッコ開くを両方含む祖先ノードを探すためのカーソルです。
+						shared_ptr<ExtensionTreeNode> searchedAncestor = currentNode->parent; // カッコ閉じると対応するカッコ開くを両方含む祖先ノードを探すためのカーソルです。
 						while (searchedAncestor){
 
 							// searchedAncestorの左の子に対応するカッコ開くがないかを検索します。
-							ExtensionTreeNode *searched = searchedAncestor; // searchedAncestorの内部からカッコ開くを検索するためのカーソルです。
+							shared_ptr<ExtensionTreeNode> searched = searchedAncestor; // searchedAncestorの内部からカッコ開くを検索するためのカーソルです。
 							while (searched && !searched->parenOpenBeforeClose){
 								searched = searched->left;
 							}
@@ -528,9 +528,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					if (found)
 					{
 						// 見つかった演算子の情報をもとにノードを入れ替えます。
-						ExtensionTreeNode *tmp = currentNode; //ノードを入れ替えるために使う変数です。
-
-						ExtensionTreeNode *searched = tmp; // 入れ替えるノードを探すためのカーソルです。
+						shared_ptr<ExtensionTreeNode> tmp = currentNode; //ノードを入れ替えるために使う変数です。
+						shared_ptr<ExtensionTreeNode> searched = tmp; // 入れ替えるノードを探すためのカーソルです。
 
 						//カッコにくくられていなかった場合に、演算子の優先順位を参考に結合するノードを探します。
 						bool first = true; // 演算子の優先順位を検索する最初のループです。
@@ -548,7 +547,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 						// 演算子のノードを新しく生成します。
 						whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
-						currentNode = whereExtensionNodes.back().get();
+						currentNode = whereExtensionNodes.back();
 						currentNode->middleOperator = middleOperator;
 
 						// 見つかった場所に新しいノードを配置します。これまでその位置にあったノードは左の子となるよう、親ノードと子ノードのポインタをつけかえます。
@@ -859,7 +858,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 			// WHEREの条件となる値を再帰的に計算します。
 			if (whereTopNode){
-				ExtensionTreeNode *currentNode = whereTopNode; // 現在見ているノードです。
+				shared_ptr<ExtensionTreeNode> currentNode = whereTopNode; // 現在見ているノードです。
 				while (currentNode){
 					// 子ノードの計算が終わってない場合は、まずそちらの計算を行います。
 					if (currentNode->left && !currentNode->left->calculated){

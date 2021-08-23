@@ -25,10 +25,10 @@ class Token{
     +string word;
 }
 class ExtensionTreeNode{
-	+ExtensionTreeNode *parent
-	+ExtensionTreeNode *left
+	+shared_ptr<ExtensionTreeNode> parent
+	+shared_ptr<ExtensionTreeNode> left
 	+Operator middleOperator
-	+ExtensionTreeNode *right
+	+shared_ptr<ExtensionTreeNode>right
 	+bool inParen
 	+int parenOpenBeforeClose
 	+int signCoefficient
