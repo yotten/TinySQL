@@ -1202,17 +1202,15 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// メモリリソースを解放します。
 		for (auto& inputTableData : inputData){
-			if (inputTableData.empty()){
-				continue;
-			}
-			currentRow = &inputTableData[0];
-			while (*currentRow){
-				Data **dataCursol = *currentRow;
+			for (auto& inputRow : inputTableData) {
+				if (!inputRow) {
+					break;
+				}
+				Data **dataCursol = inputRow;
 				while (*dataCursol){
 					delete *dataCursol++;
 				}
-				free(*currentRow);
-				currentRow++;
+				free(inputRow);
 			}
 		}
 
@@ -1242,17 +1240,15 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	catch (ResultValue error) {
 		// メモリリソースを解放します。
 		for (auto& inputTableData : inputData){
-			if (inputTableData.empty()){
-				continue;
-			}
-			currentRow = &inputTableData[0];
-			while (*currentRow){
-				Data **dataCursol = *currentRow;
+			for (auto& inputRow : inputTableData) {
+				if (!inputRow) {
+					break;
+				}
+				Data **dataCursol = inputRow;
 				while (*dataCursol){
 					delete *dataCursol++;
 				}
-				free(*currentRow);
-				currentRow++;
+				free(inputRow);
 			}
 		}
 
