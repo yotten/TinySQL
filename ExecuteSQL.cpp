@@ -667,17 +667,10 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						throw ResultValue::ERR_MEMORY_ALLOCATE;
 					}
 
-					char str[MAX_DATA_LENGTH] = "";
-					char *writeCursol = str; // データ文字列の書き込みに利用するカーソルです。
-
-					// データ文字列を一つ読みます。
-					while (charactorCursol != lineEnd && *charactorCursol != ','){
-						*writeCursol++ = *charactorCursol++;
-					}
-					// 書き込んでいる列名の文字列に終端文字を書き込みます。
-					writeCursol[1] = '\0';
-
-					*row[columnNum++] = Data(string(str));
+					auto columnStart  = charactorCursol; // 現在の列の最初を記録しておきます。
+					charactorCursol = find (charactorCursol, lineEnd, ',');
+					
+					*row[columnNum++] = Data(string(columnStart, charactorCursol));
 
 					// 入力行のカンマの分を読み進めます。
 					if (charactorCursol != lineEnd) {
