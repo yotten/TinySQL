@@ -195,7 +195,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	vector<string> tableNames;
 
 	vector<TokenKind> orders;
-	vector<Data ***> currentRows;// 入力された各テーブルの、現在出力している行を指すカーソルです。
+	//vector<Data ***> currentRows;// 入力された各テーブルの、現在出力している行を指すカーソルです。
+	vector<vector<Data**>::iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	shared_ptr<ExtensionTreeNode> whereTopNode; // 式木の根となるノードです。
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
 	//Token *tokenCursol; 	// 現在見ているトークンを指します。
@@ -679,22 +680,19 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				}
 			}
 
-			// 番兵となるnullptrを登録します。
-			inputData[i].push_back(nullptr);
-
 			// 全てが数値となる列は数値列に変換します。
 			for (size_t j = 0; j <inputColumns[i].size(); ++j) {
 
 				// 全ての行のある列について、データ文字列から符号と数値以外の文字を探します。
-				currentRow = &inputData[i][0];
 				found = false;
-				while (*currentRow){
-					const char *currentChar = (*currentRow)[j]->string().c_str();
-					while (*currentChar){
+				for (auto& inputRow : inputData[i]) {
+					// const char *currentChar = inputRow[j]->string().c_str();
+					// while (*currentChar){
+					for (auto currentChar : inputRow[j]->string()) {
 						bool isNum = false;
 						const char *currentNum = signNum.c_str();
 						while (*currentNum){
-							if (*currentChar == *currentNum){
+							if (currentChar == *currentNum){
 								isNum = true;
 								break;
 							}
@@ -704,20 +702,16 @@ int ExecuteSQL(const string sql, const string outputFileName)
 							found = true;
 							break;
 						}
-						++currentChar;
 					}
 					if (found){
 						break;
 					}
-					++currentRow;
 				}
 
 				// 符号と数字以外が見つからない列については、数値列に変換します。
 				if (!found){
-					currentRow = &inputData[i][0];
-					while (*currentRow){
-						*(*currentRow)[j] = Data(atoi((*currentRow)[j]->string().c_str()));
-						++currentRow;
+					for (auto& inputRow : inputData[i]) {
+						*inputRow[j] = Data(atoi(inputRow[j]->string().c_str()));
 					}
 				}
 			}
@@ -798,7 +792,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		for (size_t i = 0; i < tableNames.size(); ++i){
 			// 各テーブルの先頭行を設定します。
-			currentRows.push_back(&inputData[i][0]);
+			currentRows.push_back(inputData[i].begin());
 		}
 
 		// 出力するデータを設定します。
@@ -1035,13 +1029,13 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			++currentRows[tableNames.size() - 1];
 
 			// 最後のテーブルが最終行になっていた場合は先頭に戻し、順に前のテーブルのカレント行をインクリメントします。
-			for (int i = tableNames.size() - 1; !*currentRows[i] && 0 < i; --i){
+			for (int i = tableNames.size() - 1; currentRows[i] == inputData[i].end() && 0 < i; --i){
 				++currentRows[i - 1];
-				currentRows[i] = &inputData[i][0];
+				currentRows[i] = inputData[i].begin();
 			}
 
 			// 最初のテーブルが最後の行を超えたなら出力行の生成は終わりです。
-			if (!*currentRows[0]){
+			if (currentRows[0] == inputData[0].end()) {
 				break;
 			}
 		}
@@ -1200,17 +1194,12 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// メモリリソースを解放します。
 		for (auto& inputTableData : inputData){
-			if (inputTableData.empty()){
-				continue;
-			}
-			currentRow = &inputTableData[0];
-			while (*currentRow){
-				Data **dataCursol = *currentRow;
+			for (auto& inputRow : inputTableData) {
+				Data **dataCursol = inputRow;
 				while (*dataCursol){
 					delete *dataCursol++;
 				}
-				free(*currentRow);
-				currentRow++;
+				free(inputRow);
 			}
 		}
 
@@ -1240,17 +1229,12 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	catch (ResultValue error) {
 		// メモリリソースを解放します。
 		for (auto& inputTableData : inputData){
-			if (inputTableData.empty()){
-				continue;
-			}
-			currentRow = &inputTableData[0];
-			while (*currentRow){
-				Data **dataCursol = *currentRow;
+			for (auto& inputRow : inputTableData) {
+				Data **dataCursol = inputRow;
 				while (*dataCursol){
 					delete *dataCursol++;
 				}
-				free(*currentRow);
-				currentRow++;
+				free(inputRow);
 			}
 		}
 
