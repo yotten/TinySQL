@@ -51,6 +51,23 @@ static char *itoa(int n, char *buffer, int radix)
 	return buffer;
 }
 
+//! 二つの文字列を、大文字小文字を区別せずに比較し、等しいかどうかです。
+//! @param [in] str1 比較される一つ目の文字列です。
+//! @param [in] str2 比較される二つ目の文字列です。
+//! @return 比較した結果、等しいかどうかです。
+static bool Equali(const string str1, const string str2)
+{
+	bool ret;
+
+	ret = str1.size() == str2.size() &&
+		  equal(str1.begin(), str1.end(), str2.begin(),
+		  [](const char &c1, const char &c2) {
+			  return toupper(c1) == toupper(c2);
+		  });
+
+	return ret;
+}
+
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
 //! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
@@ -126,7 +143,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	ofstream outputFile;										// 書き込むファイルのファイルポインタです。
 	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
 	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
-	Data ***currentRow = nullptr;                              // データ検索時に現在見ている行を表します。
 	vector<vector<Data**>> inputData;     					  // 入力データです。
 	vector<Data**> outputData;									// 出力データです。
 	vector<Data**> allColumnOutputData;						// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
@@ -727,19 +743,21 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			for (size_t i = 0; i < tableNames.size(); ++i){
 				int j = 0;
 				for (auto &inputColumn : inputColumns[i]) {
-					const char* selectTableNameCursol = selectColumn.tableName.c_str();
-					const char* inputTableNameCursol = inputColumn.tableName.c_str();
-					while (*selectTableNameCursol && toupper(*selectTableNameCursol) == toupper(*inputTableNameCursol++)){
-						++selectTableNameCursol;
-					}
-					const char* selectColumnNameCursol = selectColumn.columnName.c_str();
-					const char* inputColumnNameCursol = inputColumn.columnName.c_str();
-					while (*selectColumnNameCursol && toupper(*selectColumnNameCursol) == toupper(*inputColumnNameCursol++)){
-						++selectColumnNameCursol;
-					}
-					if (!*selectColumnNameCursol && !*inputColumnNameCursol &&
+					// const char* selectTableNameCursol = selectColumn.tableName.c_str();
+					// const char* inputTableNameCursol = inputColumn.tableName.c_str();
+					// while (*selectTableNameCursol && toupper(*selectTableNameCursol) == toupper(*inputTableNameCursol++)){
+					// 	++selectTableNameCursol;
+					// }
+					// const char* selectColumnNameCursol = selectColumn.columnName.c_str();
+					// const char* inputColumnNameCursol = inputColumn.columnName.c_str();
+					// while (*selectColumnNameCursol && toupper(*selectColumnNameCursol) == toupper(*inputColumnNameCursol++)){
+					// 	++selectColumnNameCursol;
+					// }
+					// if (!*selectColumnNameCursol && !*inputColumnNameCursol &&
+					if (Equali(selectColumn.columnName, inputColumn.columnName) &&
 						(selectColumn.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
-						!*selectTableNameCursol && !*inputTableNameCursol)){
+						//!*selectTableNameCursol && !*inputTableNameCursol)){
+						Equali(selectColumn.tableName, inputColumn.tableName))) {
 
 						// 既に見つかっているのにもう一つ見つかったらエラーです。
 						if (found){
@@ -846,19 +864,21 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						if (!currentNode->column.columnName.empty()){
 							found = false;
 							for (size_t i = 0; i < allInputColumns.size(); ++i){
-								const char* whereTableNameCursol = currentNode->column.tableName.c_str();
-								const char* allInputTableNameCursol = allInputColumns[i].tableName.c_str();
-								while (*whereTableNameCursol && toupper(*whereTableNameCursol) == toupper(*allInputTableNameCursol++)){
-									++whereTableNameCursol;
-								}
-								const char* whereColumnNameCursol = currentNode->column.columnName.c_str();
-								const char* allInputColumnNameCursol = allInputColumns[i].columnName.c_str();
-								while (*whereColumnNameCursol && toupper(*whereColumnNameCursol) == toupper(*allInputColumnNameCursol++)){
-									++whereColumnNameCursol;
-								}
-								if (!*whereColumnNameCursol && !*allInputColumnNameCursol &&
+								// const char* whereTableNameCursol = currentNode->column.tableName.c_str();
+								// const char* allInputTableNameCursol = allInputColumns[i].tableName.c_str();
+								// while (*whereTableNameCursol && toupper(*whereTableNameCursol) == toupper(*allInputTableNameCursol++)){
+								// 	++whereTableNameCursol;
+								// }
+								// const char* whereColumnNameCursol = currentNode->column.columnName.c_str();
+								// const char* allInputColumnNameCursol = allInputColumns[i].columnName.c_str();
+								// while (*whereColumnNameCursol && toupper(*whereColumnNameCursol) == toupper(*allInputColumnNameCursol++)){
+								// 	++whereColumnNameCursol;
+								// }
+								// if (!*whereColumnNameCursol && !*allInputColumnNameCursol &&
+								if (Equali(currentNode->column.columnName, allInputColumns[i].columnName) &&
 									(currentNode->column.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
-									!*whereTableNameCursol && !*allInputTableNameCursol)){
+									//!*whereTableNameCursol && !*allInputTableNameCursol)){
+									Equali(currentNode->column.tableName, allInputColumns[i].tableName))) {
 									// 既に見つかっているのにもう一つ見つかったらエラーです。
 									if (found){
 										throw ResultValue::ERR_BAD_COLUMN_NAME;
@@ -1037,21 +1057,23 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			for (auto &orderByColumn : orderByColumns) {
 				found = false;
 				for (size_t i = 0; i < allInputColumns.size(); ++i){
-					const char* orderByTableNameCursol = orderByColumn.tableName.c_str();
-					const char* allInputTableNameCursol = allInputColumns[i].tableName.c_str();
-					while (*orderByTableNameCursol && toupper(*orderByTableNameCursol) == toupper(*allInputTableNameCursol)){
-						++orderByTableNameCursol;
-						++allInputTableNameCursol;
-					}
-					const char* orderByColumnNameCursol = orderByColumn.columnName.c_str();
-					const char* allInputColumnNameCursol = allInputColumns[i].columnName.c_str();
-					while (*orderByColumnNameCursol && toupper(*orderByColumnNameCursol) == toupper(*allInputColumnNameCursol)){
-						++orderByColumnNameCursol;
-						++allInputColumnNameCursol;
-					}
-					if (!*orderByColumnNameCursol && !*allInputColumnNameCursol &&
+					// const char* orderByTableNameCursol = orderByColumn.tableName.c_str();
+					// const char* allInputTableNameCursol = allInputColumns[i].tableName.c_str();
+					// while (*orderByTableNameCursol && toupper(*orderByTableNameCursol) == toupper(*allInputTableNameCursol)){
+					// 	++orderByTableNameCursol;
+					// 	++allInputTableNameCursol;
+					// }
+					// const char* orderByColumnNameCursol = orderByColumn.columnName.c_str();
+					// const char* allInputColumnNameCursol = allInputColumns[i].columnName.c_str();
+					// while (*orderByColumnNameCursol && toupper(*orderByColumnNameCursol) == toupper(*allInputColumnNameCursol)){
+					// 	++orderByColumnNameCursol;
+					// 	++allInputColumnNameCursol;
+					// }
+					// if (!*orderByColumnNameCursol && !*allInputColumnNameCursol &&
+					if (Equali(orderByColumn.columnName, allInputColumns[i].columnName) &&
 						(orderByColumn.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
-						!*orderByTableNameCursol && !*allInputTableNameCursol)){
+						//!*orderByTableNameCursol && !*allInputTableNameCursol)){
+						Equali(orderByColumn.tableName, allInputColumns[i].tableName))) {
 						// 既に見つかっているのにもう一つ見つかったらエラーです。
 						if (found){
 							throw ResultValue::ERR_BAD_COLUMN_NAME;
@@ -1129,9 +1151,14 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// 出力ファイルにデータを出力します。
-		currentRow = &outputData[0];
-		while (*currentRow){
-			Data **column = *currentRow;
+		// currentRow = &outputData[0];
+		// while (*currentRow){
+		// 	Data **column = *currentRow;
+		for (auto& outputRow : outputData) {
+			if (!outputRow) {
+				break;
+			}
+			Data **column = outputRow;
 			for (size_t i = 0; i < selectColumns.size(); ++i){
 				char outputString[MAX_DATA_LENGTH] = "";
 				switch ((*column)->type){
@@ -1153,7 +1180,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				}
 				++column;
 			}
-			++currentRow;
 		}
 		if (outputFile.bad()){
 			throw ResultValue::ERR_FILE_WRITE;
@@ -1188,25 +1214,39 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 		}
 
-		if (!outputData.empty()){
-			currentRow = &outputData[0];
-			while (*currentRow){
-				Data **dataCursol = *currentRow;
-				while (*dataCursol){
-					delete *dataCursol++;
-				}
-				free(*currentRow);
-				currentRow++;
+		// if (!outputData.empty()){
+		// 	currentRow = &outputData[0];
+		// 	while (*currentRow){
+		// 		Data **dataCursol = *currentRow;
+		// 		while (*dataCursol){
+		// 			delete *dataCursol++;
+		// 		}
+		// 		free(*currentRow);
+		// 		currentRow++;
+		for (auto& outputRow : outputData) {
+			if (!outputRow) {
+				break;
 			}
+			Data **dataCursol = outputRow;
+			while (*dataCursol) {
+				delete *dataCursol++;
+			}
+			free(outputRow);
 		}
-		currentRow = &allColumnOutputData[0];
-		while (*currentRow){
-			Data **dataCursol = *currentRow;
+		// currentRow = &allColumnOutputData[0];
+		// while (*currentRow){
+		// 	Data **dataCursol = *currentRow;
+		for (auto& allDataRow : allColumnOutputData) {
+			if (!allDataRow) {
+				break;
+			}
+			Data **dataCursol = allDataRow;
 			while (*dataCursol){
 				delete *dataCursol++;
 			}
-			free(*currentRow);
-			currentRow++;
+			// free(*currentRow);
+			// currentRow++;
+			free(allDataRow);
 		}
 
 		return static_cast<int>(ResultValue::OK);
@@ -1223,28 +1263,44 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 		}
 
-		if (!outputData.empty()){
-			currentRow = &outputData[0];
-			while (*currentRow && currentRow && currentRow - &outputData[0] < (int)outputData.size()){
-				Data **dataCursol = *currentRow;
-				while (*dataCursol){
-					delete *dataCursol++;
-				}
-				free(*currentRow);
-				currentRow++;
+		// if (!outputData.empty()){
+		// 	currentRow = &outputData[0];
+		// 	while (*currentRow && currentRow && currentRow - &outputData[0] < (int)outputData.size()){
+		// 		Data **dataCursol = *currentRow;
+		// 		while (*dataCursol){
+		// 			delete *dataCursol++;
+		// 		}
+		// 		free(*currentRow);
+		// 		currentRow++;
+		for (auto& outputRow : outputData) {
+			if (!outputRow) {
+				break;
 			}
+			Data **dataCursol = outputRow;
+			while (*dataCursol) {
+				delete *dataCursol++;
+			}
+			free(outputRow);
 		}
 
-		if (!allColumnOutputData.empty()){
-			currentRow = &allColumnOutputData[0];
-			while (*currentRow && currentRow - &allColumnOutputData[0] < (int)allColumnOutputData.size()){
-				Data **dataCursol = *currentRow;
-				while (*dataCursol){
-					delete *dataCursol++;
-				}
-				free(*currentRow);
-				currentRow++;
+		// if (!allColumnOutputData.empty()){
+		// 	currentRow = &allColumnOutputData[0];
+		// 	while (*currentRow && currentRow - &allColumnOutputData[0] < (int)allColumnOutputData.size()){
+		// 		Data **dataCursol = *currentRow;
+		// 		while (*dataCursol){
+		// 			delete *dataCursol++;
+		// 		}
+		// 		free(*currentRow);
+		// 		currentRow++;
+		for (auto& allDataRow : allColumnOutputData) {
+			if (!allDataRow) {
+				break;
 			}
+			Data **dataCursol = allDataRow;
+			while (*dataCursol) {
+				delete *dataCursol++;
+			}
+			free(allDataRow);
 		}
 		return  static_cast<int>(error);
 	}
