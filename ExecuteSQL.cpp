@@ -143,7 +143,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	ofstream outputFile;										// 書き込むファイルのファイルポインタです。
 	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
 	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
-	vector<vector<vector<Data*>>> inputData;     					  // 入力データです。
+	vector<vector<vector<Data>>> inputData;						// 入力データです。
 	vector<Data**> outputData;									// 出力データです。
 	vector<Data**> allColumnOutputData;						// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 	const string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
@@ -211,8 +211,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	vector<string> tableNames;
 
 	vector<TokenKind> orders;
-	//vector<Data ***> currentRows;// 入力された各テーブルの、現在出力している行を指すカーソルです。
-	vector<vector<vector<Data*>>::iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
+	vector<vector<vector<Data>>::iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	shared_ptr<ExtensionTreeNode> whereTopNode; // 式木の根となるノードです。
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
 	//Token *tokenCursol; 	// 現在見ているトークンを指します。
@@ -657,40 +656,21 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 
 			// 入力CSVのデータ行を読み込みます。
-			inputData.push_back(vector<vector<Data*>>());
+			inputData.push_back(vector<vector<Data>>());
 
 			while (getline(inputTableFiles.back(), inputLine)) {
-				// inputData[i].push_back((Data**)malloc(MAX_COLUMN_COUNT * sizeof(Data*))); // 入力されている一行分のデータです。
-				// Data **row = inputData[i].back();
-
-				// // 生成した行を初期化します。
-				// for (int j = 0; j < MAX_COLUMN_COUNT; ++j){
-				// 	row[j] = nullptr;
-				// }
-				inputData[i].push_back(vector<Data*>()); // 入力されている一行分のデータです。
-				vector<Data*> &row = inputData[i].back();
+				inputData[i].push_back(vector<Data>()); // 入力されている一行分のデータです。
+				vector<Data> &row = inputData[i].back();
 
 				auto charactorCursol = inputLine.begin(); // データ入力行を検索するカーソルです。
 				auto lineEnd = inputLine.end(); // データ入力行のendを指します。
 				
 				// 読み込んだ行を最後まで読みます。
 				while (charactorCursol != lineEnd){
-
-					// 読み込んだデータを書き込む行のカラムを生成します。
-					// if (MAX_COLUMN_COUNT <= columnNum){
-					// 	throw ResultValue::ERR_MEMORY_OVER;
-					// }
-					// row[columnNum] = new Data;
-					// if (!row[columnNum]){
-					// 	throw ResultValue::ERR_MEMORY_ALLOCATE;
-					// }
 					auto columnStart  = charactorCursol; // 現在の列の最初を記録しておきます。
 					charactorCursol = find(charactorCursol, lineEnd, ',');
 					
-					row.push_back(new Data(string(columnStart, charactorCursol)));
-					if (!row.back()) {
-						throw ResultValue::ERR_MEMORY_ALLOCATE;
-					}
+					row.push_back(Data(string(columnStart, charactorCursol)));
 
 					// 入力行のカンマの分を読み進めます。
 					if (charactorCursol != lineEnd) {
@@ -707,15 +687,15 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				// 符号と数字以外が見つからない列については、数値列に変換します。
 				// none_of：無該当の時に真を返す。
 				if (none_of(inputData[i].begin(), inputData[i].end(),
-					[&](const vector<Data*> &inputRow) {
+					[&](const vector<Data> &inputRow) {
 						// any_of：条件式に部分一致すると真を返す。
-						return any_of(inputRow[j]->string().begin(), inputRow[j]->string().end(),
+						return any_of(inputRow[j].string().begin(), inputRow[j].string().end(),
 							[&](const char& c) { return signNum.find(c) == string::npos; });
 					})) {
 
 					// 符号と数字以外が見つからない列については、数値列に変換します。
 					for (auto& inputRow : inputData[i]) {
-						*inputRow[j] = Data(atoi(inputRow[j]->string().c_str()));
+						inputRow[j] = Data(atoi(inputRow[j].string().c_str()));
 					}
 				}
 			}
@@ -809,7 +789,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				if (!row[i]){
 					throw ResultValue::ERR_MEMORY_ALLOCATE;
 				}
-				*row[i] = *(*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
+				*row[i] = (*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 			}
 
 			allColumnOutputData.push_back((Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)));
@@ -830,7 +810,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					if (!allColumnsRow[allColumnsNum]){
 						throw ResultValue::ERR_MEMORY_ALLOCATE;
 					}
-					*allColumnsRow[allColumnsNum++] = *(*currentRows[i])[j];
+					*allColumnsRow[allColumnsNum++] = (*currentRows[i])[j];
 				}
 			}
 			// WHEREの条件となる値を再帰的に計算します。
@@ -1173,18 +1153,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// メモリリソースを解放します。
-		for (auto& inputTableData : inputData){
-			for (auto& inputRow : inputTableData) {
-				// Data **dataCursol = inputRow;
-				// while (*dataCursol){
-				// 	delete *dataCursol++;
-				for (auto& data : inputRow) {
-					delete data;
-				}
-				// free(inputRow);
-			}
-		}
-
 		for (auto& outputRow : outputData) {
 			Data **dataCursol = outputRow;
 			while (*dataCursol) {
@@ -1205,17 +1173,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	}
 	catch (ResultValue error) {
 		// メモリリソースを解放します。
-		for (auto& inputTableData : inputData){
-			for (auto& inputRow : inputTableData) {
-				// Data **dataCursol = inputRow;
-				// while (*dataCursol){
-				// 	delete *dataCursol++;
-				for (auto& data : inputRow) {
-					delete data;
-				}
-			}
-		}
-
 		for (auto& outputRow : outputData) {
 			Data **dataCursol = outputRow;
 			while (*dataCursol) {
