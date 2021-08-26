@@ -145,7 +145,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
 	vector<vector<vector<Data>>> inputData;						// 入力データです。
 	vector<vector<Data>> outputData;							// 出力データです。
-	vector<Data**> allColumnOutputData;						// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
+	vector<vector<Data*>> allColumnOutputData;					// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 	const string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
 	const string alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
 	const string signNum = "+-0123456789"; // 全ての符号と数字です。
@@ -787,25 +787,27 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				row.push_back((*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column]);
 			}
 
-			allColumnOutputData.push_back((Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)));
-			Data **allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
-			if (!allColumnsRow){
-				throw ResultValue::ERR_MEMORY_ALLOCATE;
-			}
-			// 生成した行を初期化します。
-			for (int i = 0; i < MAX_TABLE_COUNT * MAX_COLUMN_COUNT; ++i){
-				allColumnsRow[i] = nullptr;
-			}
-
+			// allColumnOutputData.push_back((Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)));
+			// Data **allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
+			// if (!allColumnsRow){
+			// 	throw ResultValue::ERR_MEMORY_ALLOCATE;
+			// }
+			// // 生成した行を初期化します。
+			// for (int i = 0; i < MAX_TABLE_COUNT * MAX_COLUMN_COUNT; ++i){
+			// 	allColumnsRow[i] = nullptr;
+			// }
+			allColumnOutputData.push_back(vector<Data*>());
+			vector<Data*> &allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 			// allColumnsRowの列を設定します。
-			int allColumnsNum = 0; // allColumnsRowの現在の列数です。
 			for (size_t i = 0; i < tableNames.size(); ++i){
 				for (size_t j = 0; j < inputColumns[i].size(); ++j) {
-					allColumnsRow[allColumnsNum] = new Data;
-					if (!allColumnsRow[allColumnsNum]){
+					// allColumnsRow[allColumnsNum] = new Data;
+					// if (!allColumnsRow[allColumnsNum]){
+					allColumnsRow.push_back(new Data);
+					if (!allColumnsRow.back()) {
 						throw ResultValue::ERR_MEMORY_ALLOCATE;
 					}
-					*allColumnsRow[allColumnsNum++] = (*currentRows[i])[j];
+					*allColumnsRow.back() = (*currentRows[i])[j];
 				}
 			}
 			// WHEREの条件となる値を再帰的に計算します。
@@ -973,7 +975,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 				// 条件に合わない行は出力から削除します。
 				if (!whereTopNode->value.boolean()){
-					free(allColumnsRow);
 					allColumnOutputData.pop_back();
 					outputData.pop_back();
 				}
@@ -1065,7 +1066,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				outputData[minIndex] = outputData[i];
 				outputData[i] = tmp;
 
-				Data **allTmp = allColumnOutputData[minIndex];
+				// Data **allTmp = allColumnOutputData[minIndex];
+				vector<Data*> allTmp = allColumnOutputData[minIndex];
 				allColumnOutputData[minIndex] = allColumnOutputData[i];
 				allColumnOutputData[i] = allTmp;
 			}
@@ -1137,11 +1139,13 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// メモリリソースを解放します。
 		for (auto& allDataRow : allColumnOutputData) {
-			Data **dataCursol = allDataRow;
-			while (*dataCursol){
-				delete *dataCursol++;
+			// Data **dataCursol = allDataRow;
+			// while (*dataCursol){
+			// 	delete *dataCursol++;
+			for (auto data : allDataRow) {
+				delete data;
 			}
-			free(allDataRow);
+			// free(allDataRow);
 		}
 
 		return static_cast<int>(ResultValue::OK);
@@ -1149,11 +1153,12 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	catch (ResultValue error) {
 		// メモリリソースを解放します。
 		for (auto& allDataRow : allColumnOutputData) {
-			Data **dataCursol = allDataRow;
-			while (*dataCursol) {
-				delete *dataCursol++;
+			// Data **dataCursol = allDataRow;
+			// while (*dataCursol) {
+			// 	delete *dataCursol++;
+			for (auto data : allDataRow) {
+				delete data;
 			}
-			free(allDataRow);
 		}
 		return  static_cast<int>(error);
 	}
