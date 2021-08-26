@@ -144,7 +144,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
 	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
 	vector<vector<vector<Data>>> inputData;						// 入力データです。
-	vector<vector<Data*>> outputData;							// 出力データです。
+	vector<vector<Data>> outputData;							// 出力データです。
 	vector<Data**> allColumnOutputData;						// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 	const string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
 	const string alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
@@ -772,18 +772,19 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// 出力するデータを設定します。
 		while (true){
-			outputData.push_back(vector<Data*>());
-			vector<Data*> &row = outputData.back(); // 出力している一行分のデータです。
+			outputData.push_back(vector<Data>());
+			vector<Data> &row = outputData.back(); // 出力している一行分のデータです。
 
 			// 行の各列のデータを入力から持ってきて設定します。
 			for (size_t i = 0; i < selectColumnIndexes.size(); ++i){
 				// row[i] = new Data;
 				// if (!row[i]){
-				row.push_back(new Data);
-				if (!row.back()) {
-					throw ResultValue::ERR_MEMORY_ALLOCATE;
-				}
-				*row.back() = (*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
+				// row.push_back(new Data);
+				// if (!row.back()) {
+				// 	throw ResultValue::ERR_MEMORY_ALLOCATE;
+				// }
+				// *row.back() = (*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
+				row.push_back((*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column]);
 			}
 
 			allColumnOutputData.push_back((Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)));
@@ -1060,7 +1061,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						minIndex = j;
 					}
 				}
-				vector<Data*> tmp = outputData[minIndex];
+				vector<Data> tmp = outputData[minIndex];
 				outputData[minIndex] = outputData[i];
 				outputData[i] = tmp;
 
@@ -1089,15 +1090,15 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// 出力ファイルにデータを出力します。
 		for (auto& outputRow : outputData) {
-			Data** column = &outputRow[0];
+			Data* column = &outputRow[0];
 			for (size_t i = 0; i < selectColumns.size(); ++i){
 				char outputString[MAX_DATA_LENGTH] = "";
-				switch ((*column)->type){
+				switch (column->type){
 				case DataType::INTEGER:
-					itoa((*column)->integer(), outputString, 10);
+					itoa(column->integer(), outputString, 10);
 					break;
 				case DataType::STRING:
-					strcpy(outputString, (*column)->string().c_str());
+					strcpy(outputString, column->string().c_str());
 					break;
 				}
 
@@ -1135,12 +1136,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// メモリリソースを解放します。
-		for (auto& outputRow : outputData) {
-			for (auto data : outputRow) {
-				delete data;
-			}
-		}
-
 		for (auto& allDataRow : allColumnOutputData) {
 			Data **dataCursol = allDataRow;
 			while (*dataCursol){
@@ -1153,12 +1148,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 	}
 	catch (ResultValue error) {
 		// メモリリソースを解放します。
-		for (auto &outputRow : outputData) {
-			for (auto data : outputRow) {
-				delete data;
-			}
-		}
-
 		for (auto& allDataRow : allColumnOutputData) {
 			Data **dataCursol = allDataRow;
 			while (*dataCursol) {
