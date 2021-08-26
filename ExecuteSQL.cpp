@@ -777,36 +777,14 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 			// 行の各列のデータを入力から持ってきて設定します。
 			for (size_t i = 0; i < selectColumnIndexes.size(); ++i){
-				// row[i] = new Data;
-				// if (!row[i]){
-				// row.push_back(new Data);
-				// if (!row.back()) {
-				// 	throw ResultValue::ERR_MEMORY_ALLOCATE;
-				// }
-				// *row.back() = (*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 				row.push_back((*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column]);
 			}
 
-			// allColumnOutputData.push_back((Data**)malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)));
-			// Data **allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
-			// if (!allColumnsRow){
-			// 	throw ResultValue::ERR_MEMORY_ALLOCATE;
-			// }
-			// // 生成した行を初期化します。
-			// for (int i = 0; i < MAX_TABLE_COUNT * MAX_COLUMN_COUNT; ++i){
-			// 	allColumnsRow[i] = nullptr;
-			// }
 			allColumnOutputData.push_back(vector<Data>());
 			vector<Data> &allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 			// allColumnsRowの列を設定します。
 			for (size_t i = 0; i < tableNames.size(); ++i){
 				for (size_t j = 0; j < inputColumns[i].size(); ++j) {
-					// allColumnsRow[allColumnsNum] = new Data;
-					// if (!allColumnsRow[allColumnsNum]){
-					// allColumnsRow.push_back(new Data);
-					// if (!allColumnsRow.back()) {
-					// 	throw ResultValue::ERR_MEMORY_ALLOCATE;
-					// }
 					allColumnsRow.push_back((*currentRows[i])[j]);
 				}
 			}
