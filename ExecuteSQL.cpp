@@ -743,17 +743,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			for (size_t i = 0; i < tableNames.size(); ++i){
 				int j = 0;
 				for (auto &inputColumn : inputColumns[i]) {
-					// const char* selectTableNameCursol = selectColumn.tableName.c_str();
-					// const char* inputTableNameCursol = inputColumn.tableName.c_str();
-					// while (*selectTableNameCursol && toupper(*selectTableNameCursol) == toupper(*inputTableNameCursol++)){
-					// 	++selectTableNameCursol;
-					// }
-					// const char* selectColumnNameCursol = selectColumn.columnName.c_str();
-					// const char* inputColumnNameCursol = inputColumn.columnName.c_str();
-					// while (*selectColumnNameCursol && toupper(*selectColumnNameCursol) == toupper(*inputColumnNameCursol++)){
-					// 	++selectColumnNameCursol;
-					// }
-					// if (!*selectColumnNameCursol && !*inputColumnNameCursol &&
 					if (Equali(selectColumn.columnName, inputColumn.columnName) &&
 						(selectColumn.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 						//!*selectTableNameCursol && !*inputTableNameCursol)){
@@ -1046,7 +1035,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// 番兵となるnullptrを登録します。
-		outputData.push_back(nullptr);
 		allColumnOutputData.push_back(nullptr);
 
 		// ORDER句による並び替えの処理を行います。
@@ -1057,19 +1045,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			for (auto &orderByColumn : orderByColumns) {
 				found = false;
 				for (size_t i = 0; i < allInputColumns.size(); ++i){
-					// const char* orderByTableNameCursol = orderByColumn.tableName.c_str();
-					// const char* allInputTableNameCursol = allInputColumns[i].tableName.c_str();
-					// while (*orderByTableNameCursol && toupper(*orderByTableNameCursol) == toupper(*allInputTableNameCursol)){
-					// 	++orderByTableNameCursol;
-					// 	++allInputTableNameCursol;
-					// }
-					// const char* orderByColumnNameCursol = orderByColumn.columnName.c_str();
-					// const char* allInputColumnNameCursol = allInputColumns[i].columnName.c_str();
-					// while (*orderByColumnNameCursol && toupper(*orderByColumnNameCursol) == toupper(*allInputColumnNameCursol)){
-					// 	++orderByColumnNameCursol;
-					// 	++allInputColumnNameCursol;
-					// }
-					// if (!*orderByColumnNameCursol && !*allInputColumnNameCursol &&
 					if (Equali(orderByColumn.columnName, allInputColumns[i].columnName) &&
 						(orderByColumn.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 						//!*orderByTableNameCursol && !*allInputTableNameCursol)){
@@ -1089,9 +1064,9 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 
 			// outputDataとallColumnOutputDataのソートを一緒に行います。簡便のため凝ったソートは使わず、選択ソートを利用します。
-			for (size_t i = 0; i < outputData.size() -1; ++i){
+			for (size_t i = 0; i < outputData.size(); ++i){
 				int minIndex = i; // 現在までで最小の行のインデックスです。
-				for (size_t j = i + 1; j < outputData.size() - 1; ++j){
+				for (size_t j = i + 1; j < outputData.size(); ++j){
 					bool jLessThanMin = false; // インデックスがjの値が、minIndexの値より小さいかどうかです。
 					for (size_t k = 0; k < orderByColumnIndexes.size(); ++k){
 						Data *mData = allColumnOutputData[minIndex][orderByColumnIndexes[k]]; // インデックスがminIndexのデータです。
@@ -1151,13 +1126,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// 出力ファイルにデータを出力します。
-		// currentRow = &outputData[0];
-		// while (*currentRow){
-		// 	Data **column = *currentRow;
 		for (auto& outputRow : outputData) {
-			if (!outputRow) {
-				break;
-			}
 			Data **column = outputRow;
 			for (size_t i = 0; i < selectColumns.size(); ++i){
 				char outputString[MAX_DATA_LENGTH] = "";
@@ -1214,28 +1183,14 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 		}
 
-		// if (!outputData.empty()){
-		// 	currentRow = &outputData[0];
-		// 	while (*currentRow){
-		// 		Data **dataCursol = *currentRow;
-		// 		while (*dataCursol){
-		// 			delete *dataCursol++;
-		// 		}
-		// 		free(*currentRow);
-		// 		currentRow++;
 		for (auto& outputRow : outputData) {
-			if (!outputRow) {
-				break;
-			}
 			Data **dataCursol = outputRow;
 			while (*dataCursol) {
 				delete *dataCursol++;
 			}
 			free(outputRow);
 		}
-		// currentRow = &allColumnOutputData[0];
-		// while (*currentRow){
-		// 	Data **dataCursol = *currentRow;
+
 		for (auto& allDataRow : allColumnOutputData) {
 			if (!allDataRow) {
 				break;
@@ -1244,8 +1199,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			while (*dataCursol){
 				delete *dataCursol++;
 			}
-			// free(*currentRow);
-			// currentRow++;
 			free(allDataRow);
 		}
 
@@ -1263,19 +1216,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 		}
 
-		// if (!outputData.empty()){
-		// 	currentRow = &outputData[0];
-		// 	while (*currentRow && currentRow && currentRow - &outputData[0] < (int)outputData.size()){
-		// 		Data **dataCursol = *currentRow;
-		// 		while (*dataCursol){
-		// 			delete *dataCursol++;
-		// 		}
-		// 		free(*currentRow);
-		// 		currentRow++;
 		for (auto& outputRow : outputData) {
-			if (!outputRow) {
-				break;
-			}
 			Data **dataCursol = outputRow;
 			while (*dataCursol) {
 				delete *dataCursol++;
@@ -1283,15 +1224,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			free(outputRow);
 		}
 
-		// if (!allColumnOutputData.empty()){
-		// 	currentRow = &allColumnOutputData[0];
-		// 	while (*currentRow && currentRow - &allColumnOutputData[0] < (int)allColumnOutputData.size()){
-		// 		Data **dataCursol = *currentRow;
-		// 		while (*dataCursol){
-		// 			delete *dataCursol++;
-		// 		}
-		// 		free(*currentRow);
-		// 		currentRow++;
 		for (auto& allDataRow : allColumnOutputData) {
 			if (!allDataRow) {
 				break;
