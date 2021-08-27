@@ -1072,17 +1072,14 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		for (auto& outputRow : outputData) {
 			Data* column = &outputRow[0];
 			for (size_t i = 0; i < selectColumns.size(); ++i){
-				char outputString[MAX_DATA_LENGTH] = "";
 				switch (column->type){
 				case DataType::INTEGER:
-					itoa(column->integer(), outputString, 10);
+					outputFile << column->integer();
 					break;
 				case DataType::STRING:
-					strcpy(outputString, column->string().c_str());
+					outputFile << column->string();
 					break;
 				}
-
-				outputFile << outputString;
 
 				if (i < selectColumns.size() - 1){
 					outputFile << ",";
