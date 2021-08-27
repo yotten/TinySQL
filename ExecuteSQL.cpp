@@ -762,12 +762,10 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 			allColumnOutputData.push_back(vector<Data>());
 			vector<Data> &allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
-			// allColumnsRowの列を設定します。
-			for (size_t i = 0; i < tableNames.size(); ++i){
-				for (size_t j = 0; j < inputColumns[i].size(); ++j) {
-					allColumnsRow.push_back((*currentRows[i])[j]);
-				}
+			for (auto &currentRow : currentRows) {
+				copy(currentRow->begin(), currentRow->end(), back_inserter(allColumnsRow));
 			}
+
 			// WHEREの条件となる値を再帰的に計算します。
 			if (whereTopNode){
 				shared_ptr<ExtensionTreeNode> currentNode = whereTopNode; // 現在見ているノードです。
