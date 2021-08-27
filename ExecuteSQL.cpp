@@ -755,9 +755,10 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			vector<Data> &row = outputData.back(); // 出力している一行分のデータです。
 
 			// 行の各列のデータを入力から持ってきて設定します。
-			for (size_t i = 0; i < selectColumnIndexes.size(); ++i){
-				row.push_back((*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column]);
-			}
+			transform(selectColumnIndexes.begin(), selectColumnIndexes.end(), back_inserter(row),
+				[&](const ColumnIndex& index) {
+					return (*currentRows[index.table])[index.column];
+				});
 
 			allColumnOutputData.push_back(vector<Data>());
 			vector<Data> &allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
