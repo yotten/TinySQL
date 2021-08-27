@@ -870,22 +870,22 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						case DataType::STRING:
 							switch (currentNode->middleOperator.kind){
 							case TokenKind::EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) == 0);
+								currentNode->value = Data(currentNode->left->value.string().c_str() == currentNode->right->value.string());
 								break;
 							case TokenKind::GREATER_THAN:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) > 0);
+								currentNode->value = Data(currentNode->left->value.string() > currentNode->right->value.string());
 								break;
 							case TokenKind::GREATER_THAN_OR_EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) >= 0);
+								currentNode->value = Data(currentNode->left->value.string() >= currentNode->right->value.string());
 								break;
 							case TokenKind::LESS_THAN:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) < 0);
+								currentNode->value = Data(currentNode->left->value.string() < currentNode->right->value.string());
 								break;
 							case TokenKind::LESS_THAN_OR_EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) <= 0);
+								currentNode->value = Data(currentNode->left->value.string() <= currentNode->right->value.string());
 								break;
 							case TokenKind::NOT_EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) != 0);
+								currentNode->value = Data(currentNode->left->value.string() != currentNode->right->value.string());
 								break;
 							}
 							break;
