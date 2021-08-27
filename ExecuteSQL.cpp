@@ -44,12 +44,6 @@ enum class ResultValue : int {
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
 };
 
-static char *itoa(int n, char *buffer, int radix)
-{
-	sprintf(buffer, "%d", n);
-
-	return buffer;
-}
 
 //! 二つの文字列を、大文字小文字を区別せずに比較し、等しいかどうかです。
 //! @param [in] str1 比較される一つ目の文字列です。
@@ -494,7 +488,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						}
 					}
 					else if (tokenCursol->kind == TokenKind::INT_LITERAL){
-						currentNode->value = Data(atoi(tokenCursol->word.c_str()));
+						currentNode->value = Data(stoi(tokenCursol->word));
 						++tokenCursol;
 					}
 					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
@@ -695,7 +689,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 					// 符号と数字以外が見つからない列については、数値列に変換します。
 					for (auto& inputRow : inputData[i]) {
-						inputRow[j] = Data(atoi(inputRow[j].string().c_str()));
+						inputRow[j] = Data(stoi(inputRow[j].string()));
 					}
 				}
 			}
@@ -1044,7 +1038,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				outputData[minIndex] = outputData[i];
 				outputData[i] = tmp;
 
-				// Data **allTmp = allColumnOutputData[minIndex];
 				tmp = allColumnOutputData[minIndex];
 				allColumnOutputData[minIndex] = allColumnOutputData[i];
 				allColumnOutputData[i] = tmp;
