@@ -744,10 +744,10 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 		}
 
-		for (size_t i = 0; i < tableNames.size(); ++i){
-			// 各テーブルの先頭行を設定します。
-			currentRows.push_back(inputData[i].begin());
-		}
+		transform(inputData.begin(), inputData.end(), back_inserter(currentRows),
+			[](vector<vector<Data>>& rows) {
+				return rows.begin();
+			});
 
 		// 出力するデータを設定します。
 		while (true){
