@@ -44,12 +44,6 @@ enum class ResultValue : int {
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
 };
 
-static char *itoa(int n, char *buffer, int radix)
-{
-	sprintf(buffer, "%d", n);
-
-	return buffer;
-}
 
 //! 二つの文字列を、大文字小文字を区別せずに比較し、等しいかどうかです。
 //! @param [in] str1 比較される一つ目の文字列です。
@@ -494,7 +488,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						}
 					}
 					else if (tokenCursol->kind == TokenKind::INT_LITERAL){
-						currentNode->value = Data(atoi(tokenCursol->word.c_str()));
+						currentNode->value = Data(stoi(tokenCursol->word));
 						++tokenCursol;
 					}
 					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
@@ -531,18 +525,10 @@ int ExecuteSQL(const string sql, const string outputFileName)
 					}
 
 					// 演算子(オペレーターを読み込みます。
-					Operator middleOperator;
+					auto foundOperator = find_if(operators.begin(), operators.end(), [&](const Operator& op){ return op.kind == tokenCursol->kind; });
+
 					// 現在見ている演算子の情報を探します。
-					found = false;
-					for (auto &anOperator : operators) {
-						if (anOperator.kind == tokenCursol->kind) {
-							middleOperator = anOperator;
-							found = true;
-							break;
-						}
-					}
-					if (found)
-					{
+					if (foundOperator != operators.end()) {
 						// 見つかった演算子の情報をもとにノードを入れ替えます。
 						shared_ptr<ExtensionTreeNode> tmp = currentNode; //ノードを入れ替えるために使う変数です。
 						shared_ptr<ExtensionTreeNode> searched = tmp; // 入れ替えるノードを探すためのカーソルです。
@@ -559,12 +545,12 @@ int ExecuteSQL(const string sql, const string outputFileName)
 								searched = searched->left;
 							}
 							first = false;
-						} while (!searched && tmp->parent && (tmp->parent->middleOperator.order <= middleOperator.order || tmp->parent->inParen));
+						} while (!searched && tmp->parent && (tmp->parent->middleOperator.order <= foundOperator->order || tmp->parent->inParen));
 
 						// 演算子のノードを新しく生成します。
 						whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
 						currentNode = whereExtensionNodes.back();
-						currentNode->middleOperator = middleOperator;
+						currentNode->middleOperator = *foundOperator;
 
 						// 見つかった場所に新しいノードを配置します。これまでその位置にあったノードは左の子となるよう、親ノードと子ノードのポインタをつけかえます。
 						currentNode->parent = tmp->parent;
@@ -621,13 +607,8 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		vector<vector<Column>> inputColumns;
 
 		for (size_t i = 0; i < tableNames.size(); ++i){
-
-			// 入力ファイル名を生成します。
-			const string csvExtension = ".csv"; // csvの拡張子です。
-			const string fileName = tableNames[i] + csvExtension; // 拡張子を含む、入力ファイルのファイル名です。
-
 			// 入力ファイルを開きます。
-			inputTableFiles.push_back(ifstream(fileName));
+			inputTableFiles.push_back(ifstream(tableNames[i] + ".csv"));
 			if (!inputTableFiles.back()) {
 				throw ResultValue::ERR_FILE_OPEN;
 			}
@@ -695,7 +676,7 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 					// 符号と数字以外が見つからない列については、数値列に変換します。
 					for (auto& inputRow : inputData[i]) {
-						inputRow[j] = Data(atoi(inputRow[j].string().c_str()));
+						inputRow[j] = Data(stoi(inputRow[j].string()));
 					}
 				}
 			}
@@ -705,16 +686,13 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 		for (size_t i = 0; i < tableNames.size(); ++i){
-			for (auto &inputColumn : inputColumns[i]) {
-				allInputColumns.push_back(Column(tableNames[i], inputColumn.columnName));
-			}
+			transform(inputColumns[i].begin(), inputColumns[i].end(), back_inserter(allInputColumns),
+				[&](const Column& column) { return Column(tableNames[i], column.columnName); });
 		}
 
 		// SELECT句の列名指定が*だった場合は、入力CSVの列名がすべて選択されます。
 		if (selectColumns.empty()){
-			for (auto &inputColumn : allInputColumns) {
-				selectColumns.push_back(inputColumn);
-			}
+			copy(allInputColumns.begin(), allInputColumns.end(), back_inserter(selectColumns));
 		}
 
 		vector<Column> outputColumns;
@@ -750,9 +728,10 @@ int ExecuteSQL(const string sql, const string outputFileName)
 		}
 
 		// 出力する列名を設定します。
-		for (size_t i = 0; i < selectColumns.size(); ++i){
-			outputColumns.push_back(inputColumns[selectColumnIndexes[i].table][selectColumnIndexes[i].column]);
-		}
+		transform(selectColumnIndexes.begin(), selectColumnIndexes.end(), back_inserter(outputColumns),
+			[&](const ColumnIndex& index) {
+				return inputColumns[index.table][index.column];
+			});
 
 		if (whereTopNode){
 			// 既存数値の符号を計算します。
@@ -765,10 +744,10 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			}
 		}
 
-		for (size_t i = 0; i < tableNames.size(); ++i){
-			// 各テーブルの先頭行を設定します。
-			currentRows.push_back(inputData[i].begin());
-		}
+		transform(inputData.begin(), inputData.end(), back_inserter(currentRows),
+			[](vector<vector<Data>>& rows) {
+				return rows.begin();
+			});
 
 		// 出力するデータを設定します。
 		while (true){
@@ -776,18 +755,17 @@ int ExecuteSQL(const string sql, const string outputFileName)
 			vector<Data> &row = outputData.back(); // 出力している一行分のデータです。
 
 			// 行の各列のデータを入力から持ってきて設定します。
-			for (size_t i = 0; i < selectColumnIndexes.size(); ++i){
-				row.push_back((*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column]);
-			}
+			transform(selectColumnIndexes.begin(), selectColumnIndexes.end(), back_inserter(row),
+				[&](const ColumnIndex& index) {
+					return (*currentRows[index.table])[index.column];
+				});
 
 			allColumnOutputData.push_back(vector<Data>());
 			vector<Data> &allColumnsRow = allColumnOutputData.back();// WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
-			// allColumnsRowの列を設定します。
-			for (size_t i = 0; i < tableNames.size(); ++i){
-				for (size_t j = 0; j < inputColumns[i].size(); ++j) {
-					allColumnsRow.push_back((*currentRows[i])[j]);
-				}
+			for (auto &currentRow : currentRows) {
+				copy(currentRow->begin(), currentRow->end(), back_inserter(allColumnsRow));
 			}
+
 			// WHEREの条件となる値を再帰的に計算します。
 			if (whereTopNode){
 				shared_ptr<ExtensionTreeNode> currentNode = whereTopNode; // 現在見ているノードです。
@@ -876,22 +854,22 @@ int ExecuteSQL(const string sql, const string outputFileName)
 						case DataType::STRING:
 							switch (currentNode->middleOperator.kind){
 							case TokenKind::EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) == 0);
+								currentNode->value = Data(currentNode->left->value.string().c_str() == currentNode->right->value.string());
 								break;
 							case TokenKind::GREATER_THAN:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) > 0);
+								currentNode->value = Data(currentNode->left->value.string() > currentNode->right->value.string());
 								break;
 							case TokenKind::GREATER_THAN_OR_EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) >= 0);
+								currentNode->value = Data(currentNode->left->value.string() >= currentNode->right->value.string());
 								break;
 							case TokenKind::LESS_THAN:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) < 0);
+								currentNode->value = Data(currentNode->left->value.string() < currentNode->right->value.string());
 								break;
 							case TokenKind::LESS_THAN_OR_EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) <= 0);
+								currentNode->value = Data(currentNode->left->value.string() <= currentNode->right->value.string());
 								break;
 							case TokenKind::NOT_EQUAL:
-								currentNode->value = Data(strcmp(currentNode->left->value.string().c_str(), currentNode->right->value.string().c_str()) != 0);
+								currentNode->value = Data(currentNode->left->value.string() != currentNode->right->value.string());
 								break;
 							}
 							break;
@@ -1044,7 +1022,6 @@ int ExecuteSQL(const string sql, const string outputFileName)
 				outputData[minIndex] = outputData[i];
 				outputData[i] = tmp;
 
-				// Data **allTmp = allColumnOutputData[minIndex];
 				tmp = allColumnOutputData[minIndex];
 				allColumnOutputData[minIndex] = allColumnOutputData[i];
 				allColumnOutputData[i] = tmp;
@@ -1070,27 +1047,23 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// 出力ファイルにデータを出力します。
 		for (auto& outputRow : outputData) {
-			Data* column = &outputRow[0];
-			for (size_t i = 0; i < selectColumns.size(); ++i){
-				char outputString[MAX_DATA_LENGTH] = "";
-				switch (column->type){
+			size_t i = 0;
+			for (auto &column : outputRow) {
+				switch (column.type) {
 				case DataType::INTEGER:
-					itoa(column->integer(), outputString, 10);
+					outputFile << column.integer();
 					break;
 				case DataType::STRING:
-					strcpy(outputString, column->string().c_str());
+					outputFile << column.string();
 					break;
 				}
 
-				outputFile << outputString;
-
-				if (i < selectColumns.size() - 1){
+				if (i++ < selectColumns.size() - 1){
 					outputFile << ",";
 				}
 				else{
 					outputFile << "\n";
 				}
-				++column;
 			}
 		}
 		if (outputFile.bad()){
