@@ -1,4 +1,4 @@
-CFLAGS=-std=c++17 -Wall
+CFLAGS=-std=c++17 #-Wall
 LDFLAGS=-pthread -lgtest_main -lgtest
 
 test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o

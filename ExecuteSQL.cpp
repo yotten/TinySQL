@@ -18,9 +18,6 @@
 
 //#pragma warning(disable:4996)
 
-#define MAX_COLUMN_COUNT 16                //!< 入出力されるデータに含まれる列の最大数です。
-#define MAX_TABLE_COUNT 8                  //!< CSVとして入力されるテーブルの最大数です。
-
 using namespace std;
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
@@ -46,7 +43,38 @@ enum class ResultValue : int {
 
 //! ファイルに対して実行するSQLを表すクラスです。
 class SqlQuery {
+	vector<ifstream> inputTableFiles;							// 読み込むファイルの全ての入力ストリーム
+	ofstream outputFile;										// 書き込むファイルのファイルポインタです。
+	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
+	vector<vector<vector<Data>>> inputData;						// 入力データです。
+	vector<vector<Data>> outputData;							// 出力データです。
+	vector<vector<Data>> allColumnOutputData;					// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
+
+	const string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
+	const string alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
+	const string signNum = "+-0123456789"; // 全ての符号と数字です。
+	const string num = "0123456789"; // 全ての数字です。
+	const string space = " \t\r\n"; // 全ての空白文字です。
+
+
+	// キーワードをトークンとして認識するためのキーワード一覧情報です。
+	const vector<Token> keywordConditions;
+
+	// 記号をトークンとして認識するための記号一覧情報です。
+	const vector<Token> signConditions;
+
+	// 演算子の情報です。
+	const vector<Operator> operators;
+
+	vector<Token> tokens; // SQLを分割したトークンです。
+	vector<string> tableNames; // FROM句で指定しているテーブル名です。
 public:
+	//! SqlQueryクラスの新しいインスタンスを初期化します。
+	SqlQuery();
+	//! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
+	//! @param [in] sql 実行するSQLです。
+	//! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
+	//! @return 実行した結果の状態です。
 	int Execute(const string sql, const string outputFileName);
 };
 
@@ -67,28 +95,9 @@ static bool Equali(const string str1, const string str2)
 	return ret;
 }
 
-int SqlQuery::Execute(const string sql, const string outputFileName)
-{
-	vector<ifstream> inputTableFiles;							// 読み込むファイルの全ての入力ストリーム
-	ofstream outputFile;										// 書き込むファイルのファイルポインタです。
-	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
-	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
-	vector<vector<vector<Data>>> inputData;						// 入力データです。
-	vector<vector<Data>> outputData;							// 出力データです。
-	vector<vector<Data>> allColumnOutputData;					// 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
-	const string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
-	const string alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
-	const string signNum = "+-0123456789"; // 全ての符号と数字です。
-	const string num = "0123456789"; // 全ての数字です。
-	const string space = " \t\r\n"; // 全ての空白文字です。
-
-	// SQLからトークンを読み込みます。
-
-	// keywordConditionsとsignConditionsは先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
-
-	// キーワードをトークンとして認識するためのキーワード一覧情報です。
-	const vector<Token> keywordConditions =
-	{
+//! SqlQueryクラスの新しいインスタンスを初期化します。
+SqlQuery::SqlQuery() :
+	keywordConditions({
 		{ TokenKind::AND, "AND" },
 		{ TokenKind::ASC, "ASC" },
 		{ TokenKind::BY, "BY" },
@@ -97,13 +106,8 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 		{ TokenKind::ORDER, "ORDER" },
 		{ TokenKind::OR, "OR" },
 		{ TokenKind::SELECT, "SELECT" },
-		{ TokenKind::WHERE, "WHERE" },
-	};
-
-	// 記号をトークンとして認識するための記号一覧情報です。
-	//const Token signConditions[] =
-	const vector<Token> signConditions =
-	{
+		{ TokenKind::WHERE, "WHERE" }}),
+	signConditions({
 		{ TokenKind::GREATER_THAN_OR_EQUAL, ">=" },
 		{ TokenKind::LESS_THAN_OR_EQUAL, "<=" },
 		{ TokenKind::NOT_EQUAL, "<>" },
@@ -117,13 +121,8 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 		{ TokenKind::MINUS, "-" },
 		{ TokenKind::OPEN_PAREN, "(" },
 		{ TokenKind::PLUS, "+" },
-		{ TokenKind::SLASH, "/" },
-	};
-
-	vector<Token> tokens; // SQLを分割したトークンです。
-
-	// 演算子の情報です。
-	const vector<Operator> operators = {
+		{ TokenKind::SLASH, "/" }}),
+	operators({
 		{ TokenKind::ASTERISK, 1 },
 		{ TokenKind::SLASH, 1 },
 		{ TokenKind::PLUS, 2 },
@@ -135,10 +134,21 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 		{ TokenKind::LESS_THAN_OR_EQUAL, 3 },
 		{ TokenKind::NOT_EQUAL, 3 },
 		{ TokenKind::AND, 4 },
-		{ TokenKind::OR, 5 },
-	};
+		{ TokenKind::OR, 5 }})
+{
+}
 
-	vector<string> tableNames;
+//! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
+//! @param [in] sql 実行するSQLです。
+//! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
+//! @return 実行した結果の状態です。
+int SqlQuery::Execute(const string sql, const string outputFileName)
+{
+	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
+
+	// SQLからトークンを読み込みます。
+
+	// keywordConditionsとsignConditionsは先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
 
 	vector<TokenKind> orders;
 	vector<vector<vector<Data>>::iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
@@ -211,7 +221,8 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 					else {
 						return false;
 					}
-			});
+				}
+			);
 			if (keyword != keywordConditions.end()){
 				tokens.push_back(Token(keyword->kind));
 				continue;

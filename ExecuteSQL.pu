@@ -1,13 +1,13 @@
 @startuml
 
 class testExecuteSQL {}
-class ExecuteSQL {
+class SqlQuery {
 	-vector<ifstream> inputTableFiles
 	-ofstream outputFile
 	-bool found
 	-vector<vector<vector<Data>>> inputData
 	-vector<vector<Data>> outputData
-	-vector<vector<Data>> allColumnOutputData
+	-vector<vector<Data>> allColumnOutputData	
 	-const string alpahUnder
 	-const string alpahNumUnder
 	-const string signNum
@@ -18,6 +18,11 @@ class ExecuteSQL {
 	-const vector<const Operator> operators
 	-vector<const Token> tokens
 	-vector<const string> tableNames
+	+SqlQuery()
+	+int SqlQuery::Execute(const string sql, const string outputFileName)
+}
+class ExecuteSQL {
+	
 }	
 class Data {
     +DataType type
