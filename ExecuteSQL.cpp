@@ -1047,24 +1047,23 @@ int ExecuteSQL(const string sql, const string outputFileName)
 
 		// 出力ファイルにデータを出力します。
 		for (auto& outputRow : outputData) {
-			Data* column = &outputRow[0];
-			for (size_t i = 0; i < selectColumns.size(); ++i){
-				switch (column->type){
+			size_t i = 0;
+			for (auto &column : outputRow) {
+				switch (column.type) {
 				case DataType::INTEGER:
-					outputFile << column->integer();
+					outputFile << column.integer();
 					break;
 				case DataType::STRING:
-					outputFile << column->string();
+					outputFile << column.string();
 					break;
 				}
 
-				if (i < selectColumns.size() - 1){
+				if (i++ < selectColumns.size() - 1){
 					outputFile << ",";
 				}
 				else{
 					outputFile << "\n";
 				}
-				++column;
 			}
 		}
 		if (outputFile.bad()){
