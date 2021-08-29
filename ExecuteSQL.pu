@@ -4,6 +4,20 @@ class testExecuteSQL {}
 class ExecuteSQL {
 	-vector<ifstream> inputTableFiles
 	-ofstream outputFile
+	-bool found
+	-vector<vector<vector<Data>>> inputData
+	-vector<vector<Data>> outputData
+	-vector<vector<Data>> allColumnOutputData
+	-const string alpahUnder
+	-const string alpahNumUnder
+	-const string signNum
+	-const string num
+	-const string space
+	-const vector<const Token> keywordConditions
+	-const vector<const Token> signConditions
+	-const vector<const Operator> operators
+	-vector<const Token> tokens
+	-vector<const string> tableNames
 }	
 class Data {
     +DataType type
