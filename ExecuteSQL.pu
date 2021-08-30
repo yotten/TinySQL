@@ -18,12 +18,14 @@ class SqlQuery {
 	-const vector<const Operator> operators
 	-vector<const Token> tokens
 	-vector<const string> tableNames
+	-bool Equali(const string str1, const string str2)
 	+SqlQuery()
 	+int SqlQuery::Execute(const string sql, const string outputFileName)
 }
 class ExecuteSQL {
 	
-}	
+}
+
 class Data {
     +DataType type
 	-string m_string
@@ -113,13 +115,14 @@ enum ResultValue{
 }
 
 ExecuteSQL <-- testExecuteSQL
-Data <-- ExecuteSQL
-Operator <-- ExecuteSQL
-Token <-- ExecuteSQL
-ExtensionTreeNode <-- ExecuteSQL
-ColumnIndex <-- ExecuteSQL
-Column <-- ExecuteSQL
-ResultValue <-- ExecuteSQL
+SqlQuery <-- ExecuteSQL
+Data <-- SqlQuery
+Operator <-- SqlQuery
+Token <-- SqlQuery
+ExtensionTreeNode <-- SqlQuery
+ColumnIndex <-- SqlQuery
+Column <-- SqlQuery
+ResultValue <-- SqlQuery
 DataType <-- Data
 TokenKind <-- Token
 TokenKind <-- Operator

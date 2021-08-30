@@ -1,15 +1,15 @@
 CFLAGS=-std=c++17 #-Wall
 LDFLAGS=-pthread -lgtest_main -lgtest
 
-test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o
-	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o $(CFLAGS) $(LDFLAGS)
+test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o
+	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o $(CFLAGS) $(LDFLAGS)
 	./testExecuteSQL
 
 #testExecuteSQL.o: testExecuteSQL.cpp
 testExecuteSQL.o: testExecuteSQL.cpp 
 	g++ -c $(CFLAGS) testExecuteSQL.cpp
 
-ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp extension_tree_node.hpp column_index.hpp
+ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp extension_tree_node.hpp column_index.hpp sqlQuery.hpp
 	g++ -c $(CFLAGS) ExecuteSQL.cpp
 
 data.o: data.cpp data.hpp
@@ -29,6 +29,10 @@ extension_tree_node.o: extension_tree_node.cpp extension_tree_node.hpp data.hpp
 
 column_index.o: column_index.cpp column_index.hpp
 	g++ -c $(CFLAGS) column_index.cpp
+
+sqlQuery.o: sqlQuery.cpp sqlQuery.hpp
+	g++ -c $(CFLAGS) sqlQuery.cpp
+
 clean:
 	rm -f *.o
 
