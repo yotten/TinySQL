@@ -182,6 +182,301 @@ void SqlQuery::GetTokens()
 	}
 }
 
+//! トークンを解析してSQLの構文で指定された情報を取得します。
+void SqlQuery::AnalyzeTokens()
+{
+	// トークン列を解析し、構文を読み取ります。
+	auto tokenCursol = tokens.begin();
+	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです
+	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
+	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
+
+	// SQLの構文を解析し、必要な情報を取得します。
+
+	// SELECT句を読み込みます。
+	if (tokenCursol->kind == TokenKind::SELECT){
+		++tokenCursol;
+	}
+	else{
+		throw ResultValue::ERR_SQL_SYNTAX;
+	}
+
+	if (tokenCursol->kind == TokenKind::ASTERISK){
+		++tokenCursol;
+	}
+	else
+	{
+		bool first = true; // SELECT句に最初に指定された列名の読み込みかどうかです。
+		while (tokenCursol->kind == TokenKind::COMMA || first){
+			if (tokenCursol->kind == TokenKind::COMMA){
+				++tokenCursol;
+			}
+			if (tokenCursol->kind == TokenKind::IDENTIFIER){
+				// テーブル名が指定されていない場合と仮定して読み込みます。
+				selectColumns.push_back(Column(tokenCursol->word.c_str()));
+				++tokenCursol;
+				if (tokenCursol->kind == TokenKind::DOT){
+					++tokenCursol;
+					if (tokenCursol->kind == TokenKind::IDENTIFIER){
+						// テーブル名が指定されていることがわかったので読み替えます。
+						selectColumns.back() = Column(selectColumns.back().columnName, tokenCursol->word);
+						++tokenCursol;
+					}
+					else{
+						throw ResultValue::ERR_SQL_SYNTAX;
+					}
+				}
+			}
+			else{
+				throw ResultValue::ERR_SQL_SYNTAX;
+			}
+			first = false;
+		}
+	}
+
+	// ORDER句とWHERE句を読み込みます。最大各一回ずつ書くことができます。
+	readOrder = false; // すでにORDER句が読み込み済みかどうかです。
+	readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
+	while (tokenCursol->kind == TokenKind::ORDER || tokenCursol->kind == TokenKind::WHERE){
+
+		// 二度目のORDER句はエラーです。
+		if (readOrder && tokenCursol->kind == TokenKind::ORDER){
+			throw ResultValue::ERR_SQL_SYNTAX;
+		}
+
+		// 二度目のWHERE句はエラーです。
+		if (readWhere && tokenCursol->kind == TokenKind::WHERE){
+			throw ResultValue::ERR_SQL_SYNTAX;
+		}
+		// ORDER句を読み込みます。
+		if (tokenCursol->kind == TokenKind::ORDER){
+			readOrder = true;
+			++tokenCursol;
+			if (tokenCursol->kind == TokenKind::BY){
+				++tokenCursol;
+				bool first = true; // ORDER句の最初の列名の読み込みかどうかです。
+				while (tokenCursol->kind == TokenKind::COMMA || first){
+					if (tokenCursol->kind == TokenKind::COMMA){
+						++tokenCursol;
+					}
+					if (tokenCursol->kind == TokenKind::IDENTIFIER){
+						// テーブル名が指定されていない場合と仮定して読み込みます。
+						orderByColumns.push_back(Column(tokenCursol->word));
+						++tokenCursol;
+						if (tokenCursol->kind == TokenKind::DOT){
+							++tokenCursol;
+							if (tokenCursol->kind == TokenKind::IDENTIFIER) {
+								// テーブル名が指定されていることがわかったので読み替えます。
+								orderByColumns.back() = Column(orderByColumns.back().columnName, tokenCursol->word);
+								++tokenCursol;
+							}
+							else{
+								throw ResultValue::ERR_SQL_SYNTAX;
+							}
+						}
+
+						// 並び替えの昇順、降順を指定します。
+						if (tokenCursol->kind == TokenKind::ASC) {
+							orders.push_back(TokenKind::ASC);
+							++tokenCursol;
+						}
+						else if (tokenCursol->kind == TokenKind::DESC) {
+							orders.push_back(TokenKind::DESC);
+							++tokenCursol;
+						}
+						else {
+							// 指定がない場合は昇順となります。
+							orders.push_back(TokenKind::ASC);
+						}
+					}
+					else{
+						throw ResultValue::ERR_SQL_SYNTAX;
+					}
+					first = false;
+				}
+			}
+			else{
+				throw ResultValue::ERR_SQL_SYNTAX;
+			}
+		}
+
+		// WHERE句を読み込みます。
+		if (tokenCursol->kind == TokenKind::WHERE){
+			readWhere = true;
+			++tokenCursol;
+			shared_ptr<ExtensionTreeNode> currentNode; // 現在読み込んでいるノードです。
+			while (true){
+				// オペランドを読み込みます。
+
+				// オペランドのノードを新しく生成します。
+				whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
+				if (currentNode){
+					// 現在のノードを右の子にずらし、元の位置に新しいノードを挿入します。
+					currentNode->right = whereExtensionNodes.back();
+					currentNode->right->parent = currentNode;
+					currentNode = currentNode->right;
+				}
+				else{
+					// 最初はカレントノードに新しいノードを入れます。
+					currentNode = whereExtensionNodes.back();
+				}
+
+				// カッコ開くを読み込みます。
+				while (tokenCursol->kind == TokenKind::OPEN_PAREN){
+					++currentNode->parenOpenBeforeClose;
+					++tokenCursol;
+				}
+
+				// オペランドに前置される+か-を読み込みます。
+				if (tokenCursol->kind == TokenKind::PLUS || tokenCursol->kind == TokenKind::MINUS){
+
+					// +-を前置するのは列名と数値リテラルのみです。
+					if (tokenCursol[1].kind != TokenKind::IDENTIFIER && tokenCursol[1].kind != TokenKind::INT_LITERAL){
+						throw ResultValue::ERR_WHERE_OPERAND_TYPE;
+					}
+					if (tokenCursol->kind == TokenKind::MINUS){
+						currentNode->signCoefficient = -1;
+					}
+					++tokenCursol;
+				}
+
+				// 列名、整数リテラル、文字列リテラルのいずれかをオペランドとして読み込みます。
+				if (tokenCursol->kind == TokenKind::IDENTIFIER){
+
+					// テーブル名が指定されていない場合と仮定して読み込みます。
+					currentNode->column = Column(tokenCursol->word);
+					++tokenCursol;
+					if (tokenCursol->kind == TokenKind::DOT){
+						++tokenCursol;
+						if (tokenCursol->kind == TokenKind::IDENTIFIER){
+
+							// テーブル名が指定されていることがわかったので読み替えます。
+							currentNode->column = Column(currentNode->column.columnName, tokenCursol->word);
+							++tokenCursol;
+						}
+						else{
+							throw ResultValue::ERR_SQL_SYNTAX;
+						}
+					}
+				}
+				else if (tokenCursol->kind == TokenKind::INT_LITERAL){
+					currentNode->value = Data(stoi(tokenCursol->word));
+					++tokenCursol;
+				}
+				else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
+					// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
+					currentNode->value = Data(string(tokenCursol->word).substr(1, string(tokenCursol->word).size() - 2));
+
+					++tokenCursol;
+				}
+				else{
+					throw ResultValue::ERR_SQL_SYNTAX;
+				}
+
+				// オペランドの右のカッコ閉じるを読み込みます。
+				while (tokenCursol->kind == TokenKind::CLOSE_PAREN){
+					shared_ptr<ExtensionTreeNode> searchedAncestor = currentNode->parent; // カッコ閉じると対応するカッコ開くを両方含む祖先ノードを探すためのカーソルです。
+					while (searchedAncestor){
+
+						// searchedAncestorの左の子に対応するカッコ開くがないかを検索します。
+						shared_ptr<ExtensionTreeNode> searched = searchedAncestor; // searchedAncestorの内部からカッコ開くを検索するためのカーソルです。
+						while (searched && !searched->parenOpenBeforeClose){
+							searched = searched->left;
+						}
+						if (searched){
+							// 対応付けられていないカッコ開くを一つ削除し、ノードがカッコに囲まれていることを記録します。
+							--searched->parenOpenBeforeClose;
+							searchedAncestor->inParen = true;
+							break;
+						}
+						else{
+							searchedAncestor = searchedAncestor->parent;
+						}
+					}
+					++tokenCursol;
+				}
+
+				// 演算子(オペレーターを読み込みます。
+				auto foundOperator = find_if(operators.begin(), operators.end(), [&](const Operator& op){ return op.kind == tokenCursol->kind; });
+
+				// 現在見ている演算子の情報を探します。
+				if (foundOperator != operators.end()) {
+					// 見つかった演算子の情報をもとにノードを入れ替えます。
+					shared_ptr<ExtensionTreeNode> tmp = currentNode; //ノードを入れ替えるために使う変数です。
+					shared_ptr<ExtensionTreeNode> searched = tmp; // 入れ替えるノードを探すためのカーソルです。
+
+					//カッコにくくられていなかった場合に、演算子の優先順位を参考に結合するノードを探します。
+					bool first = true; // 演算子の優先順位を検索する最初のループです。
+					do{
+						if (!first){
+							tmp = tmp->parent;
+							searched = tmp;
+						}
+						// 現在の読み込み場所をくくるカッコが開く場所を探します。
+						while (searched && !searched->parenOpenBeforeClose){
+							searched = searched->left;
+						}
+						first = false;
+					} while (!searched && tmp->parent && (tmp->parent->middleOperator.order <= foundOperator->order || tmp->parent->inParen));
+
+					// 演算子のノードを新しく生成します。
+					whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
+					currentNode = whereExtensionNodes.back();
+					currentNode->middleOperator = *foundOperator;
+
+					// 見つかった場所に新しいノードを配置します。これまでその位置にあったノードは左の子となるよう、親ノードと子ノードのポインタをつけかえます。
+					currentNode->parent = tmp->parent;
+					if (currentNode->parent){
+						currentNode->parent->right = currentNode;
+					}
+					currentNode->left = tmp;
+					tmp->parent = currentNode;
+
+					++tokenCursol;
+				}
+				else{
+					// 現在見ている種類が演算子の一覧から見つからなければ、WHERE句は終わります。
+					break;
+				}
+			}
+
+			// 木を根に向かってさかのぼり、根のノードを設定します。
+			whereTopNode = currentNode;
+			while (whereTopNode->parent){
+				whereTopNode = whereTopNode->parent;
+			}
+		}
+	}
+
+	// FROM句を読み込みます。
+	if (tokenCursol->kind == TokenKind::FROM){
+		++tokenCursol;
+	}
+	else{
+		throw ResultValue::ERR_SQL_SYNTAX;
+	}
+
+	first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
+	while (tokenCursol != tokens.end() && tokenCursol->kind == TokenKind::COMMA || first){
+		if (tokenCursol->kind == TokenKind::COMMA){
+			++tokenCursol;
+		}
+		if (tokenCursol->kind == TokenKind::IDENTIFIER){
+			tableNames.push_back(tokenCursol->word);
+			++tokenCursol;
+		}
+		else{
+			throw ResultValue::ERR_SQL_SYNTAX;
+		}
+		first = false;
+	}
+
+	// 最後のトークンまで読み込みが進んでいなかったらエラーです。
+	if (tokenCursol != tokens.end()) {
+		throw ResultValue::ERR_SQL_SYNTAX;
+	}
+}
+
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
 //! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
@@ -196,307 +491,12 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 
 	// keywordConditionsとsignConditionsは先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
 
-	vector<TokenKind> orders;
 	vector<vector<vector<Data>>::iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
-	shared_ptr<ExtensionTreeNode> whereTopNode; // 式木の根となるノードです。
-	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
 	//Token *tokenCursol; 	// 現在見ているトークンを指します。
-	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
-	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
 
 	try {
 		GetTokens();
-
-		// トークン列を解析し、構文を読み取ります。
-		auto tokenCursol = tokens.begin();
-		vector<Column> selectColumns; // SELECT句に指定された列名です。
-		vector<Column> orderByColumns; // ORDER句に指定された列名です。
-		vector<shared_ptr<ExtensionTreeNode>> whereExtensionNodes;
-
-		// SQLの構文を解析し、必要な情報を取得します。
-
-		// SELECT句を読み込みます。
-		if (tokenCursol->kind == TokenKind::SELECT){
-			++tokenCursol;
-		}
-		else{
-			throw ResultValue::ERR_SQL_SYNTAX;
-		}
-
-		if (tokenCursol->kind == TokenKind::ASTERISK){
-			++tokenCursol;
-		}
-		else
-		{
-			bool first = true; // SELECT句に最初に指定された列名の読み込みかどうかです。
-			while (tokenCursol->kind == TokenKind::COMMA || first){
-				if (tokenCursol->kind == TokenKind::COMMA){
-					++tokenCursol;
-				}
-				if (tokenCursol->kind == TokenKind::IDENTIFIER){
-					// テーブル名が指定されていない場合と仮定して読み込みます。
-					selectColumns.push_back(Column(tokenCursol->word.c_str()));
-					++tokenCursol;
-					if (tokenCursol->kind == TokenKind::DOT){
-						++tokenCursol;
-						if (tokenCursol->kind == TokenKind::IDENTIFIER){
-							// テーブル名が指定されていることがわかったので読み替えます。
-							selectColumns.back() = Column(selectColumns.back().columnName, tokenCursol->word);
-							++tokenCursol;
-						}
-						else{
-							throw ResultValue::ERR_SQL_SYNTAX;
-						}
-					}
-				}
-				else{
-					throw ResultValue::ERR_SQL_SYNTAX;
-				}
-				first = false;
-			}
-		}
-
-		// ORDER句とWHERE句を読み込みます。最大各一回ずつ書くことができます。
-		readOrder = false; // すでにORDER句が読み込み済みかどうかです。
-		readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
-		while (tokenCursol->kind == TokenKind::ORDER || tokenCursol->kind == TokenKind::WHERE){
-
-			// 二度目のORDER句はエラーです。
-			if (readOrder && tokenCursol->kind == TokenKind::ORDER){
-				throw ResultValue::ERR_SQL_SYNTAX;
-			}
-
-			// 二度目のWHERE句はエラーです。
-			if (readWhere && tokenCursol->kind == TokenKind::WHERE){
-				throw ResultValue::ERR_SQL_SYNTAX;
-			}
-			// ORDER句を読み込みます。
-			if (tokenCursol->kind == TokenKind::ORDER){
-				readOrder = true;
-				++tokenCursol;
-				if (tokenCursol->kind == TokenKind::BY){
-					++tokenCursol;
-					bool first = true; // ORDER句の最初の列名の読み込みかどうかです。
-					while (tokenCursol->kind == TokenKind::COMMA || first){
-						if (tokenCursol->kind == TokenKind::COMMA){
-							++tokenCursol;
-						}
-						if (tokenCursol->kind == TokenKind::IDENTIFIER){
-							// テーブル名が指定されていない場合と仮定して読み込みます。
-							orderByColumns.push_back(Column(tokenCursol->word));
-							++tokenCursol;
-							if (tokenCursol->kind == TokenKind::DOT){
-								++tokenCursol;
-								if (tokenCursol->kind == TokenKind::IDENTIFIER) {
-									// テーブル名が指定されていることがわかったので読み替えます。
-									orderByColumns.back() = Column(orderByColumns.back().columnName, tokenCursol->word);
-									++tokenCursol;
-								}
-								else{
-									throw ResultValue::ERR_SQL_SYNTAX;
-								}
-							}
-
-							// 並び替えの昇順、降順を指定します。
-							if (tokenCursol->kind == TokenKind::ASC) {
-								orders.push_back(TokenKind::ASC);
-								++tokenCursol;
-							}
-							else if (tokenCursol->kind == TokenKind::DESC) {
-								orders.push_back(TokenKind::DESC);
-								++tokenCursol;
-							}
-							else {
-								// 指定がない場合は昇順となります。
-								orders.push_back(TokenKind::ASC);
-							}
-						}
-						else{
-							throw ResultValue::ERR_SQL_SYNTAX;
-						}
-						first = false;
-					}
-				}
-				else{
-					throw ResultValue::ERR_SQL_SYNTAX;
-				}
-			}
-
-			// WHERE句を読み込みます。
-			if (tokenCursol->kind == TokenKind::WHERE){
-				readWhere = true;
-				++tokenCursol;
-				shared_ptr<ExtensionTreeNode> currentNode; // 現在読み込んでいるノードです。
-				while (true){
-					// オペランドを読み込みます。
-
-					// オペランドのノードを新しく生成します。
-					whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
-					if (currentNode){
-						// 現在のノードを右の子にずらし、元の位置に新しいノードを挿入します。
-						currentNode->right = whereExtensionNodes.back();
-						currentNode->right->parent = currentNode;
-						currentNode = currentNode->right;
-					}
-					else{
-						// 最初はカレントノードに新しいノードを入れます。
-						currentNode = whereExtensionNodes.back();
-					}
-
-					// カッコ開くを読み込みます。
-					while (tokenCursol->kind == TokenKind::OPEN_PAREN){
-						++currentNode->parenOpenBeforeClose;
-						++tokenCursol;
-					}
-
-					// オペランドに前置される+か-を読み込みます。
-					if (tokenCursol->kind == TokenKind::PLUS || tokenCursol->kind == TokenKind::MINUS){
-
-						// +-を前置するのは列名と数値リテラルのみです。
-						if (tokenCursol[1].kind != TokenKind::IDENTIFIER && tokenCursol[1].kind != TokenKind::INT_LITERAL){
-							throw ResultValue::ERR_WHERE_OPERAND_TYPE;
-						}
-						if (tokenCursol->kind == TokenKind::MINUS){
-							currentNode->signCoefficient = -1;
-						}
-						++tokenCursol;
-					}
-
-					// 列名、整数リテラル、文字列リテラルのいずれかをオペランドとして読み込みます。
-					if (tokenCursol->kind == TokenKind::IDENTIFIER){
-
-						// テーブル名が指定されていない場合と仮定して読み込みます。
-						currentNode->column = Column(tokenCursol->word);
-						++tokenCursol;
-						if (tokenCursol->kind == TokenKind::DOT){
-							++tokenCursol;
-							if (tokenCursol->kind == TokenKind::IDENTIFIER){
-
-								// テーブル名が指定されていることがわかったので読み替えます。
-								currentNode->column = Column(currentNode->column.columnName, tokenCursol->word);
-								++tokenCursol;
-							}
-							else{
-								throw ResultValue::ERR_SQL_SYNTAX;
-							}
-						}
-					}
-					else if (tokenCursol->kind == TokenKind::INT_LITERAL){
-						currentNode->value = Data(stoi(tokenCursol->word));
-						++tokenCursol;
-					}
-					else if (tokenCursol->kind == TokenKind::STRING_LITERAL){
-						// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
-						currentNode->value = Data(string(tokenCursol->word).substr(1, string(tokenCursol->word).size() - 2));
-
-						++tokenCursol;
-					}
-					else{
-						throw ResultValue::ERR_SQL_SYNTAX;
-					}
-
-					// オペランドの右のカッコ閉じるを読み込みます。
-					while (tokenCursol->kind == TokenKind::CLOSE_PAREN){
-						shared_ptr<ExtensionTreeNode> searchedAncestor = currentNode->parent; // カッコ閉じると対応するカッコ開くを両方含む祖先ノードを探すためのカーソルです。
-						while (searchedAncestor){
-
-							// searchedAncestorの左の子に対応するカッコ開くがないかを検索します。
-							shared_ptr<ExtensionTreeNode> searched = searchedAncestor; // searchedAncestorの内部からカッコ開くを検索するためのカーソルです。
-							while (searched && !searched->parenOpenBeforeClose){
-								searched = searched->left;
-							}
-							if (searched){
-								// 対応付けられていないカッコ開くを一つ削除し、ノードがカッコに囲まれていることを記録します。
-								--searched->parenOpenBeforeClose;
-								searchedAncestor->inParen = true;
-								break;
-							}
-							else{
-								searchedAncestor = searchedAncestor->parent;
-							}
-						}
-						++tokenCursol;
-					}
-
-					// 演算子(オペレーターを読み込みます。
-					auto foundOperator = find_if(operators.begin(), operators.end(), [&](const Operator& op){ return op.kind == tokenCursol->kind; });
-
-					// 現在見ている演算子の情報を探します。
-					if (foundOperator != operators.end()) {
-						// 見つかった演算子の情報をもとにノードを入れ替えます。
-						shared_ptr<ExtensionTreeNode> tmp = currentNode; //ノードを入れ替えるために使う変数です。
-						shared_ptr<ExtensionTreeNode> searched = tmp; // 入れ替えるノードを探すためのカーソルです。
-
-						//カッコにくくられていなかった場合に、演算子の優先順位を参考に結合するノードを探します。
-						bool first = true; // 演算子の優先順位を検索する最初のループです。
-						do{
-							if (!first){
-								tmp = tmp->parent;
-								searched = tmp;
-							}
-							// 現在の読み込み場所をくくるカッコが開く場所を探します。
-							while (searched && !searched->parenOpenBeforeClose){
-								searched = searched->left;
-							}
-							first = false;
-						} while (!searched && tmp->parent && (tmp->parent->middleOperator.order <= foundOperator->order || tmp->parent->inParen));
-
-						// 演算子のノードを新しく生成します。
-						whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
-						currentNode = whereExtensionNodes.back();
-						currentNode->middleOperator = *foundOperator;
-
-						// 見つかった場所に新しいノードを配置します。これまでその位置にあったノードは左の子となるよう、親ノードと子ノードのポインタをつけかえます。
-						currentNode->parent = tmp->parent;
-						if (currentNode->parent){
-							currentNode->parent->right = currentNode;
-						}
-						currentNode->left = tmp;
-						tmp->parent = currentNode;
-
-						++tokenCursol;
-					}
-					else{
-						// 現在見ている種類が演算子の一覧から見つからなければ、WHERE句は終わります。
-						break;
-					}
-				}
-
-				// 木を根に向かってさかのぼり、根のノードを設定します。
-				whereTopNode = currentNode;
-				while (whereTopNode->parent){
-					whereTopNode = whereTopNode->parent;
-				}
-			}
-		}
-
-		// FROM句を読み込みます。
-		if (tokenCursol->kind == TokenKind::FROM){
-			++tokenCursol;
-		}
-		else{
-			throw ResultValue::ERR_SQL_SYNTAX;
-		}
-
-		first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
-		while (tokenCursol != tokens.end() && tokenCursol->kind == TokenKind::COMMA || first){
-			if (tokenCursol->kind == TokenKind::COMMA){
-				++tokenCursol;
-			}
-			if (tokenCursol->kind == TokenKind::IDENTIFIER){
-				tableNames.push_back(tokenCursol->word);
-				++tokenCursol;
-			}
-			else{
-				throw ResultValue::ERR_SQL_SYNTAX;
-			}
-			first = false;
-		}
-
-		// 最後のトークンまで読み込みが進んでいなかったらエラーです。
-		if (tokenCursol != tokens.end()) {
-			throw ResultValue::ERR_SQL_SYNTAX;
-		}
+		AnalyzeTokens();
 
 		vector<vector<Column>> inputColumns;
 
@@ -988,4 +988,3 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 		return  static_cast<int>(error);
 	}
 }
-

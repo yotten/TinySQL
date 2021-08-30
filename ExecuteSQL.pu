@@ -18,10 +18,16 @@ class SqlQuery {
 	-const vector<const Operator> operators
 	-vector<const Token> tokens
 	-vector<const string> tableNames
+	-vector<TokenKind> orders
+	-shared_ptr<ExtensionTreeNode> whereTopNode
+	-vector<Column> selectColumns
+	-vector<std::shared_ptr<ExtensionTreeNode>> whereExtensionNodes
+	-vector<Column> orderByColumns
 	-string m_sql
 	-string m_outputFileName
 	-bool Equali(const string str1, const string str2)
 	-void GetTokens()
+	-void AnalyzeTokens()
 	+SqlQuery()
 	+int SqlQuery::Execute(const string sql, const string outputFileName)
 }

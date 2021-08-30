@@ -35,11 +35,18 @@ class SqlQuery {
 	std::vector<Token> tokens; //!< SQLを分割したトークンです。
 	std::vector<std::string> tableNames; //!< FROM句で指定しているテーブル名です。
 
+	std::vector<TokenKind> orders;       //!< 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
+	std::shared_ptr<ExtensionTreeNode> whereTopNode; // 式木の根となるノードです。
+    std::vector<Column> selectColumns; // SELECT句に指定された列名です。
+	std::vector<std::shared_ptr<ExtensionTreeNode>> whereExtensionNodes;
+	std::vector<Column> orderByColumns; // ORDER句に指定された列名です。
+
     std::string m_sql;              //!< 実行するSQLです。
     std::string m_outputFileName;   //!< outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
     
     bool Equali(const std::string str1, const std::string str2);
 	void GetTokens();               //! SQLの文字列からトークンを切り出します。
+	void AnalyzeTokens();           //! トークンを解析してSQLの構文で指定された情報を取得します。
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();
