@@ -30,6 +30,7 @@ class SqlQuery {
 	-void GetTokens()
 	-void AnalyzeTokens()
 	-void ReadCsv()
+	-void WriteCsv()
 	+SqlQuery()
 	+int Execute(const string sql, const string outputFileName)
 }

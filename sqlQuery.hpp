@@ -49,6 +49,7 @@ class SqlQuery {
 	void GetTokens();               //! SQLの文字列からトークンを切り出します。
 	void AnalyzeTokens();           //! トークンを解析してSQLの構文で指定された情報を取得します。
     void ReadCsv();                 //! CSVファイルから入力データを読み取ります。
+	void WriteCsv();                //! CSVファイルに出力データを書き込みます。
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();
