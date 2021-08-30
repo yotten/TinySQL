@@ -40,6 +40,7 @@ class SqlQuery {
     std::vector<Column> selectColumns; // SELECT句に指定された列名です。
 	std::vector<std::shared_ptr<ExtensionTreeNode>> whereExtensionNodes;
 	std::vector<Column> orderByColumns; // ORDER句に指定された列名です。
+    std::vector<std::vector<Column>> inputColumns;
 
     std::string m_sql;              //!< 実行するSQLです。
     std::string m_outputFileName;   //!< outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
@@ -47,6 +48,7 @@ class SqlQuery {
     bool Equali(const std::string str1, const std::string str2);
 	void GetTokens();               //! SQLの文字列からトークンを切り出します。
 	void AnalyzeTokens();           //! トークンを解析してSQLの構文で指定された情報を取得します。
+    void ReadCsv();                 //! CSVファイルから入力データを読み取ります。
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();

@@ -23,13 +23,15 @@ class SqlQuery {
 	-vector<Column> selectColumns
 	-vector<std::shared_ptr<ExtensionTreeNode>> whereExtensionNodes
 	-vector<Column> orderByColumns
+	-vector<vector<Column>> inputColumns
 	-string m_sql
 	-string m_outputFileName
 	-bool Equali(const string str1, const string str2)
 	-void GetTokens()
 	-void AnalyzeTokens()
+	-void ReadCsv()
 	+SqlQuery()
-	+int SqlQuery::Execute(const string sql, const string outputFileName)
+	+int Execute(const string sql, const string outputFileName)
 }
 class ExecuteSQL {
 	
