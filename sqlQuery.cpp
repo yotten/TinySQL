@@ -77,6 +77,111 @@ bool SqlQuery::Equali(const string str1, const string str2)
 	return ret;
 }
 
+//! SQLの文字列からトークンを切り出します。
+void SqlQuery::GetTokens()
+{
+	auto sqlBackPoint = m_sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
+	auto sqlCursol = m_sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
+	auto sqlEnd = m_sql.end(); // m_sqlのendを指します。
+
+	// SQLをトークンに分割て読み込みます。
+	while (sqlCursol != sqlEnd){
+
+		// 空白を読み飛ばします。
+		sqlCursol = find_if(sqlCursol, sqlEnd, [&](char c){return space.find(c) == string::npos;});
+		if (sqlCursol == sqlEnd) {
+			break;
+		}
+
+		// 数値リテラルを読み込みます。
+
+		// 先頭文字が数字であるかどうかを確認します。
+		sqlBackPoint = sqlCursol;
+		sqlCursol = find_if(sqlCursol, sqlEnd, [&](char c){return num.find(c) == string::npos;});
+		if (sqlCursol != sqlBackPoint && (
+			alpahUnder.find(*sqlCursol) == string::npos || // 数字の後にすぐに識別子が続くのは紛らわしいので数値リテラルとは扱いません。
+			sqlCursol == sqlEnd)) {
+				tokens.push_back(Token(TokenKind::INT_LITERAL, string(sqlBackPoint, sqlCursol)));
+				continue;
+		}
+		else {
+			sqlCursol = sqlBackPoint;
+		}
+
+		// 文字列リテラルを読み込みます。
+		sqlBackPoint = sqlCursol;
+
+		// 文字列リテラルを開始するシングルクォートを判別し、読み込みます。
+		// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
+		if (*sqlCursol  == "\'"[0]){
+			++sqlCursol;
+
+			// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
+			sqlCursol = find_if_not(sqlCursol, sqlEnd, [](char c){return c != "\'"[0];});
+			if (sqlCursol == sqlEnd) {
+				throw ResultValue::ERR_TOKEN_CANT_READ;
+			}
+			++sqlCursol;
+
+			tokens.push_back(Token(TokenKind::STRING_LITERAL, string(sqlBackPoint, sqlCursol)));
+			continue;
+		}
+
+		// キーワードを読み込みます。
+		found = false;
+
+		auto keyword = find_if(keywordConditions.begin(), keywordConditions.end(),
+			[&](Token keyword) {
+				auto result = mismatch(keyword.word.begin(), keyword.word.end(), sqlCursol,
+					[](const char keywordChar, const char sqlChar){return keywordChar == toupper(sqlChar);});
+				
+				if (result.first == keyword.word.end() &&
+					result.second != sqlEnd && alpahNumUnder.find(*result.second) == string::npos) {
+						sqlCursol = result.second;
+				}
+				else {
+					return false;
+				}
+			}
+		);
+		if (keyword != keywordConditions.end()){
+			tokens.push_back(Token(keyword->kind));
+			continue;
+		}
+
+		// 記号を読み込みます。
+		auto sign = find_if(signConditions.begin(), signConditions.end(),
+			[&](Token keyword) {
+				auto result = mismatch(keyword.word.begin(), keyword.word.end(), sqlCursol,
+					[](const char keywordChar, const char sqlChar){return keywordChar == toupper(sqlChar);});
+
+				if (result.first == keyword.word.end()) {
+					sqlCursol = result.second;
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+		);
+		
+		if (sign != signConditions.end()) {
+			tokens.push_back(Token(sign->kind));
+			continue;
+		}
+
+		// 識別子を読み込みます。
+		sqlBackPoint = sqlCursol;
+		if (alpahUnder.find(*sqlCursol++) != string::npos) {
+			sqlCursol = find_if(sqlCursol, sqlEnd, [&](const char c){return alpahNumUnder.find(c) == string::npos;});
+			tokens.push_back(Token(TokenKind::IDENTIFIER, string(sqlBackPoint, sqlCursol)));
+			continue;
+		}
+
+		throw ResultValue::ERR_TOKEN_CANT_READ;
+	}
+}
+
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
 //! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
@@ -100,106 +205,7 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
 
 	try {
-		auto sqlBackPoint = m_sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
-		auto sqlCursol = m_sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
-		auto sqlEnd = m_sql.end(); // m_sqlのendを指します。
-
-		// SQLをトークンに分割て読み込みます。
-		while (sqlCursol != sqlEnd){
-
-			// 空白を読み飛ばします。
-			sqlCursol = find_if(sqlCursol, sqlEnd, [&](char c){return space.find(c) == string::npos;});
-			if (sqlCursol == sqlEnd) {
-				break;
-			}
-
-			// 数値リテラルを読み込みます。
-
-			// 先頭文字が数字であるかどうかを確認します。
-			sqlBackPoint = sqlCursol;
-			sqlCursol = find_if(sqlCursol, sqlEnd, [&](char c){return num.find(c) == string::npos;});
-			if (sqlCursol != sqlBackPoint && (
-				alpahUnder.find(*sqlCursol) == string::npos || // 数字の後にすぐに識別子が続くのは紛らわしいので数値リテラルとは扱いません。
-				sqlCursol == sqlEnd)) {
-					tokens.push_back(Token(TokenKind::INT_LITERAL, string(sqlBackPoint, sqlCursol)));
-					continue;
-			}
-			else {
-				sqlCursol = sqlBackPoint;
-			}
-
-			// 文字列リテラルを読み込みます。
-			sqlBackPoint = sqlCursol;
-
-			// 文字列リテラルを開始するシングルクォートを判別し、読み込みます。
-			// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
-			if (*sqlCursol  == "\'"[0]){
-				++sqlCursol;
-
-				// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
-				sqlCursol = find_if_not(sqlCursol, sqlEnd, [](char c){return c != "\'"[0];});
-				if (sqlCursol == sqlEnd) {
-					throw ResultValue::ERR_TOKEN_CANT_READ;
-				}
-				++sqlCursol;
-
-				tokens.push_back(Token(TokenKind::STRING_LITERAL, string(sqlBackPoint, sqlCursol)));
-				continue;
-			}
-
-			// キーワードを読み込みます。
-			found = false;
-
-			auto keyword = find_if(keywordConditions.begin(), keywordConditions.end(),
-				[&](Token keyword) {
-					auto result = mismatch(keyword.word.begin(), keyword.word.end(), sqlCursol,
-						[](const char keywordChar, const char sqlChar){return keywordChar == toupper(sqlChar);});
-					
-					if (result.first == keyword.word.end() &&
-						result.second != sqlEnd && alpahNumUnder.find(*result.second) == string::npos) {
-							sqlCursol = result.second;
-					}
-					else {
-						return false;
-					}
-				}
-			);
-			if (keyword != keywordConditions.end()){
-				tokens.push_back(Token(keyword->kind));
-				continue;
-			}
-
-			// 記号を読み込みます。
-			auto sign = find_if(signConditions.begin(), signConditions.end(),
-				[&](Token keyword) {
-					auto result = mismatch(keyword.word.begin(), keyword.word.end(), sqlCursol,
-						[](const char keywordChar, const char sqlChar){return keywordChar == toupper(sqlChar);});
-
-					if (result.first == keyword.word.end()) {
-						sqlCursol = result.second;
-						return true;
-					}
-					else {
-						return false;
-					}
-				}
-			);
-			
-			if (sign != signConditions.end()) {
-				tokens.push_back(Token(sign->kind));
-				continue;
-			}
-
-			// 識別子を読み込みます。
-			sqlBackPoint = sqlCursol;
-			if (alpahUnder.find(*sqlCursol++) != string::npos) {
-				sqlCursol = find_if(sqlCursol, sqlEnd, [&](const char c){return alpahNumUnder.find(c) == string::npos;});
-				tokens.push_back(Token(TokenKind::IDENTIFIER, string(sqlBackPoint, sqlCursol)));
-				continue;
-			}
-
-			throw ResultValue::ERR_TOKEN_CANT_READ;
-		}
+		GetTokens();
 
 		// トークン列を解析し、構文を読み取ります。
 		auto tokenCursol = tokens.begin();

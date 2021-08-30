@@ -39,6 +39,7 @@ class SqlQuery {
     std::string m_outputFileName;   //!< outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
     
     bool Equali(const std::string str1, const std::string str2);
+	void GetTokens();               //! SQLの文字列からトークンを切り出します。
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();
