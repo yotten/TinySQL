@@ -18,6 +18,8 @@ class SqlQuery {
 	-const vector<const Operator> operators
 	-vector<const Token> tokens
 	-vector<const string> tableNames
+	-string m_sql
+	-string m_outputFileName
 	-bool Equali(const string str1, const string str2)
 	+SqlQuery()
 	+int SqlQuery::Execute(const string sql, const string outputFileName)
