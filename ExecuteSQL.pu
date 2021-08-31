@@ -28,7 +28,7 @@ class SqlQuery {
 	-string m_sql
 	-string m_outputFileName
 	-bool Equali(const string str1, const string str2)
-	-void GetTokens()
+	-const shared_ptr<vector<Token>> GetTokens(const string sql) const;
 	-void AnalyzeTokens()
 	-void ReadCsv()
 	-void WriteCsv()

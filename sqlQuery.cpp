@@ -77,12 +77,15 @@ bool SqlQuery::Equali(const string str1, const string str2)
 	return ret;
 }
 
-//! SQLの文字列からトークンを切り出します。
-void SqlQuery::GetTokens()
+//! @param [in] sql トークンに分解する元となるSQLです。
+//! @return 切り出されたトークンです。
+const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 {
-	auto sqlBackPoint = m_sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
-	auto sqlCursol = m_sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
-	auto sqlEnd = m_sql.end(); // m_sqlのendを指します。
+	auto sqlBackPoint = sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
+	auto sqlCursol = sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
+	auto sqlEnd = sql.end(); // sqlのendを指します。
+
+	auto tokens = make_shared<vector<Token>>(); //読み込んだトークンです。
 
 	// SQLをトークンに分割て読み込みます。
 	while (sqlCursol != sqlEnd){
@@ -101,7 +104,7 @@ void SqlQuery::GetTokens()
 		if (sqlCursol != sqlBackPoint && (
 			alpahUnder.find(*sqlCursol) == string::npos || // 数字の後にすぐに識別子が続くのは紛らわしいので数値リテラルとは扱いません。
 			sqlCursol == sqlEnd)) {
-				tokens.push_back(Token(TokenKind::INT_LITERAL, string(sqlBackPoint, sqlCursol)));
+				tokens->push_back(Token(TokenKind::INT_LITERAL, string(sqlBackPoint, sqlCursol)));
 				continue;
 		}
 		else {
@@ -123,12 +126,12 @@ void SqlQuery::GetTokens()
 			}
 			++sqlCursol;
 
-			tokens.push_back(Token(TokenKind::STRING_LITERAL, string(sqlBackPoint, sqlCursol)));
+			tokens->push_back(Token(TokenKind::STRING_LITERAL, string(sqlBackPoint, sqlCursol)));
 			continue;
 		}
 
 		// キーワードを読み込みます。
-		found = false;
+		bool found = false;
 
 		auto keyword = find_if(keywordConditions.begin(), keywordConditions.end(),
 			[&](Token keyword) {
@@ -145,7 +148,7 @@ void SqlQuery::GetTokens()
 			}
 		);
 		if (keyword != keywordConditions.end()){
-			tokens.push_back(Token(keyword->kind));
+			tokens->push_back(Token(keyword->kind));
 			continue;
 		}
 
@@ -166,7 +169,7 @@ void SqlQuery::GetTokens()
 		);
 		
 		if (sign != signConditions.end()) {
-			tokens.push_back(Token(sign->kind));
+			tokens->push_back(Token(sign->kind));
 			continue;
 		}
 
@@ -174,12 +177,14 @@ void SqlQuery::GetTokens()
 		sqlBackPoint = sqlCursol;
 		if (alpahUnder.find(*sqlCursol++) != string::npos) {
 			sqlCursol = find_if(sqlCursol, sqlEnd, [&](const char c){return alpahNumUnder.find(c) == string::npos;});
-			tokens.push_back(Token(TokenKind::IDENTIFIER, string(sqlBackPoint, sqlCursol)));
+			tokens->push_back(Token(TokenKind::IDENTIFIER, string(sqlBackPoint, sqlCursol)));
 			continue;
 		}
 
 		throw ResultValue::ERR_TOKEN_CANT_READ;
 	}
+
+	return tokens;
 }
 
 //! トークンを解析してSQLの構文で指定された情報を取得します。
@@ -981,11 +986,10 @@ void SqlQuery::CheckClosingFiles()
 //! @return 実行した結果の状態です。
 int SqlQuery::Execute(const string sql, const string outputFileName)
 {
-	m_sql = sql;
 	m_outputFileName = outputFileName;
 
 	try {
-		GetTokens();
+		tokens = *GetTokens(sql);
 		AnalyzeTokens();
 		ReadCsv();
 		WriteCsv();
