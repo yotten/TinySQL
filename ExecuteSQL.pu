@@ -24,6 +24,7 @@ class SqlQuery {
 	-vector<std::shared_ptr<ExtensionTreeNode>> whereExtensionNodes
 	-vector<Column> orderByColumns
 	-vector<vector<Column>> inputColumns
+	-void CheckClosingFiles()
 	-string m_sql
 	-string m_outputFileName
 	-bool Equali(const string str1, const string str2)

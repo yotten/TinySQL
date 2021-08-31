@@ -952,6 +952,13 @@ void SqlQuery::WriteCsv()
 	// 正常時の後処理です。
 
 	// ファイルリソースを解放します。
+	CheckClosingFiles();
+}
+
+//! ファイルのClose処理を行い、正常に行われたか確認します。
+void SqlQuery::CheckClosingFiles()
+{
+	// ファイルリソースを解放します。
 	for (auto &inputTableFile : inputTableFiles) {
 		if (inputTableFile) {
 			inputTableFile.close();

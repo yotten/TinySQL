@@ -50,6 +50,7 @@ class SqlQuery {
 	void AnalyzeTokens();           //! トークンを解析してSQLの構文で指定された情報を取得します。
     void ReadCsv();                 //! CSVファイルから入力データを読み取ります。
 	void WriteCsv();                //! CSVファイルに出力データを書き込みます。
+	void CheckClosingFiles();       //! ファイルのClose処理を行い、正常に行われたか確認します。
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();
