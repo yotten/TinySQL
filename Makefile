@@ -30,7 +30,7 @@ extension_tree_node.o: extension_tree_node.cpp extension_tree_node.hpp data.hpp
 column_index.o: column_index.cpp column_index.hpp
 	g++ -c $(CFLAGS) column_index.cpp
 
-sqlQuery.o: sqlQuery.cpp sqlQuery.hpp
+sqlQuery.o: sqlQuery.cpp sqlQuery.hpp sqlQueryInfo.hpp
 	g++ -c $(CFLAGS) sqlQuery.cpp
 
 clean:

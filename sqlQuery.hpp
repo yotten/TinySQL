@@ -1,9 +1,7 @@
 #include "token.hpp"
 #include "data.hpp"
 #include "operator.hpp"
-#include "token.hpp"
-#include "extension_tree_node.hpp"
-#include "column_index.hpp"
+#include "sqlQueryInfo.hpp"
 
 #include <string>
 #include <fstream>
@@ -33,13 +31,8 @@ class SqlQuery {
 	const std::vector<Operator> operators;      //!< 演算子の情報です。
 
 	std::vector<Token> tokens; //!< SQLを分割したトークンです。
-	std::vector<std::string> tableNames; //!< FROM句で指定しているテーブル名です。
 
-	std::vector<TokenKind> orders;       //!< 同じインデックスのorderByColumnsに対応している、昇順、降順の指定です。
-	std::shared_ptr<ExtensionTreeNode> whereTopNode; // 式木の根となるノードです。
-    std::vector<Column> selectColumns; // SELECT句に指定された列名です。
-	std::vector<std::shared_ptr<ExtensionTreeNode>> whereExtensionNodes;
-	std::vector<Column> orderByColumns; // ORDER句に指定された列名です。
+    SqlQueryInfo queryInfo; //! SQLを解析した結果の情報です。
     std::vector<std::vector<Column>> inputColumns;
 
     std::string m_outputFileName;   //!< outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。

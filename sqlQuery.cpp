@@ -1,4 +1,6 @@
 #include "sqlQuery.hpp"
+#include "extension_tree_node.hpp"
+#include "column_index.hpp"
 
 using namespace std;
 
@@ -218,13 +220,13 @@ void SqlQuery::AnalyzeTokens()
 			}
 			if (tokenCursol->kind == TokenKind::IDENTIFIER){
 				// テーブル名が指定されていない場合と仮定して読み込みます。
-				selectColumns.push_back(Column(tokenCursol->word.c_str()));
+				queryInfo.selectColumns.push_back(Column(tokenCursol->word.c_str()));
 				++tokenCursol;
 				if (tokenCursol->kind == TokenKind::DOT){
 					++tokenCursol;
 					if (tokenCursol->kind == TokenKind::IDENTIFIER){
 						// テーブル名が指定されていることがわかったので読み替えます。
-						selectColumns.back() = Column(selectColumns.back().columnName, tokenCursol->word);
+						queryInfo.selectColumns.back() = Column(queryInfo.selectColumns.back().columnName, tokenCursol->word);
 						++tokenCursol;
 					}
 					else{
@@ -266,13 +268,13 @@ void SqlQuery::AnalyzeTokens()
 					}
 					if (tokenCursol->kind == TokenKind::IDENTIFIER){
 						// テーブル名が指定されていない場合と仮定して読み込みます。
-						orderByColumns.push_back(Column(tokenCursol->word));
+						queryInfo.orderByColumns.push_back(Column(tokenCursol->word));
 						++tokenCursol;
 						if (tokenCursol->kind == TokenKind::DOT){
 							++tokenCursol;
 							if (tokenCursol->kind == TokenKind::IDENTIFIER) {
 								// テーブル名が指定されていることがわかったので読み替えます。
-								orderByColumns.back() = Column(orderByColumns.back().columnName, tokenCursol->word);
+								queryInfo.orderByColumns.back() = Column(queryInfo.orderByColumns.back().columnName, tokenCursol->word);
 								++tokenCursol;
 							}
 							else{
@@ -282,16 +284,16 @@ void SqlQuery::AnalyzeTokens()
 
 						// 並び替えの昇順、降順を指定します。
 						if (tokenCursol->kind == TokenKind::ASC) {
-							orders.push_back(TokenKind::ASC);
+							queryInfo.orders.push_back(TokenKind::ASC);
 							++tokenCursol;
 						}
 						else if (tokenCursol->kind == TokenKind::DESC) {
-							orders.push_back(TokenKind::DESC);
+							queryInfo.orders.push_back(TokenKind::DESC);
 							++tokenCursol;
 						}
 						else {
 							// 指定がない場合は昇順となります。
-							orders.push_back(TokenKind::ASC);
+							queryInfo.orders.push_back(TokenKind::ASC);
 						}
 					}
 					else{
@@ -314,16 +316,16 @@ void SqlQuery::AnalyzeTokens()
 				// オペランドを読み込みます。
 
 				// オペランドのノードを新しく生成します。
-				whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
+				queryInfo.whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
 				if (currentNode){
 					// 現在のノードを右の子にずらし、元の位置に新しいノードを挿入します。
-					currentNode->right = whereExtensionNodes.back();
+					currentNode->right = queryInfo.whereExtensionNodes.back();
 					currentNode->right->parent = currentNode;
 					currentNode = currentNode->right;
 				}
 				else{
 					// 最初はカレントノードに新しいノードを入れます。
-					currentNode = whereExtensionNodes.back();
+					currentNode = queryInfo.whereExtensionNodes.back();
 				}
 
 				// カッコ開くを読み込みます。
@@ -425,8 +427,8 @@ void SqlQuery::AnalyzeTokens()
 					} while (!searched && tmp->parent && (tmp->parent->middleOperator.order <= foundOperator->order || tmp->parent->inParen));
 
 					// 演算子のノードを新しく生成します。
-					whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
-					currentNode = whereExtensionNodes.back();
+					queryInfo.whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
+					currentNode = queryInfo.whereExtensionNodes.back();
 					currentNode->middleOperator = *foundOperator;
 
 					// 見つかった場所に新しいノードを配置します。これまでその位置にあったノードは左の子となるよう、親ノードと子ノードのポインタをつけかえます。
@@ -446,9 +448,9 @@ void SqlQuery::AnalyzeTokens()
 			}
 
 			// 木を根に向かってさかのぼり、根のノードを設定します。
-			whereTopNode = currentNode;
-			while (whereTopNode->parent){
-				whereTopNode = whereTopNode->parent;
+			queryInfo.whereTopNode = currentNode;
+			while (queryInfo.whereTopNode->parent){
+				queryInfo.whereTopNode = queryInfo.whereTopNode->parent;
 			}
 		}
 	}
@@ -467,7 +469,7 @@ void SqlQuery::AnalyzeTokens()
 			++tokenCursol;
 		}
 		if (tokenCursol->kind == TokenKind::IDENTIFIER){
-			tableNames.push_back(tokenCursol->word);
+			queryInfo.tableNames.push_back(tokenCursol->word);
 			++tokenCursol;
 		}
 		else{
@@ -485,9 +487,9 @@ void SqlQuery::AnalyzeTokens()
 //! CSVファイルから入力データを読み取ります。
 void SqlQuery::ReadCsv()
 {
-	for (size_t i = 0; i < tableNames.size(); ++i){
+	for (size_t i = 0; i < queryInfo.tableNames.size(); ++i){
 		// 入力ファイルを開きます。
-		inputTableFiles.push_back(ifstream(tableNames[i] + ".csv"));
+		inputTableFiles.push_back(ifstream(queryInfo.tableNames[i] + ".csv"));
 		if (!inputTableFiles.back()) {
 			throw ResultValue::ERR_FILE_OPEN;
 		}
@@ -504,7 +506,7 @@ void SqlQuery::ReadCsv()
 				// 列名を一つ読みます。
 				auto columnStart = charactorCursol;
 				charactorCursol = find(charactorCursol, lineEnd, ',');
-				inputColumns[i].push_back(Column(tableNames[i], string(columnStart, charactorCursol)));
+				inputColumns[i].push_back(Column(queryInfo.tableNames[i], string(columnStart, charactorCursol)));
 				// 入力行のカンマの分を読み進めます。
 				if (charactorCursol != lineEnd) {
 					++charactorCursol;
@@ -569,23 +571,23 @@ void SqlQuery::WriteCsv()
 	vector<vector<vector<Data>>::iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 
 	// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
-	for (size_t i = 0; i < tableNames.size(); ++i){
+	for (size_t i = 0; i < queryInfo.tableNames.size(); ++i){
 		transform(inputColumns[i].begin(), inputColumns[i].end(), back_inserter(allInputColumns),
-			[&](const Column& column) { return Column(tableNames[i], column.columnName); });
+			[&](const Column& column) { return Column(queryInfo.tableNames[i], column.columnName); });
 	}
 
 	// SELECT句の列名指定が*だった場合は、入力CSVの列名がすべて選択されます。
-	if (selectColumns.empty()){
-		copy(allInputColumns.begin(), allInputColumns.end(), back_inserter(selectColumns));
+	if (queryInfo.selectColumns.empty()){
+		copy(allInputColumns.begin(), allInputColumns.end(), back_inserter(queryInfo.selectColumns));
 	}
 
 	vector<Column> outputColumns;
 
 	// SELECT句で指定された列名が、何個目の入力ファイルの何列目に相当するかを判別します。
 	vector<ColumnIndex> selectColumnIndexes; // SELECT句で指定された列の、入力ファイルとしてのインデックスです。
-	for (auto &selectColumn : selectColumns) {
+	for (auto &selectColumn : queryInfo.selectColumns) {
 		found = false;
-		for (size_t i = 0; i < tableNames.size(); ++i){
+		for (size_t i = 0; i < queryInfo.tableNames.size(); ++i){
 			int j = 0;
 			for (auto &inputColumn : inputColumns[i]) {
 				if (Equali(selectColumn.columnName, inputColumn.columnName) &&
@@ -617,9 +619,9 @@ void SqlQuery::WriteCsv()
 			return inputColumns[index.table][index.column];
 		});
 
-	if (whereTopNode){
+	if (queryInfo.whereTopNode){
 		// 既存数値の符号を計算します。
-		for (auto &whereExtensionNode : whereExtensionNodes) {
+		for (auto &whereExtensionNode : queryInfo.whereExtensionNodes) {
 			if (whereExtensionNode->middleOperator.kind == TokenKind::NOT_TOKEN &&
 				whereExtensionNode->column.columnName.empty() &&
 				whereExtensionNode->value.type == DataType::INTEGER) {
@@ -651,8 +653,8 @@ void SqlQuery::WriteCsv()
 		}
 
 		// WHEREの条件となる値を再帰的に計算します。
-		if (whereTopNode){
-			shared_ptr<ExtensionTreeNode> currentNode = whereTopNode; // 現在見ているノードです。
+		if (queryInfo.whereTopNode){
+			shared_ptr<ExtensionTreeNode> currentNode = queryInfo.whereTopNode; // 現在見ているノードです。
 			while (currentNode){
 				// 子ノードの計算が終わってない場合は、まずそちらの計算を行います。
 				if (currentNode->left && !currentNode->left->calculated){
@@ -814,12 +816,12 @@ void SqlQuery::WriteCsv()
 			}
 
 			// 条件に合わない行は出力から削除します。
-			if (!whereTopNode->value.boolean()){
+			if (!queryInfo.whereTopNode->value.boolean()){
 				allColumnOutputData.pop_back();
 				outputData.pop_back();
 			}
 			// WHERE条件の計算結果をリセットします。
-			for (auto &whereExtensionNode : whereExtensionNodes) {
+			for (auto &whereExtensionNode : queryInfo.whereExtensionNodes) {
 				whereExtensionNode->calculated = false;
 			}
 		}
@@ -827,10 +829,10 @@ void SqlQuery::WriteCsv()
 		// 各テーブルの行のすべての組み合わせを出力します。
 
 		// 最後のテーブルのカレント行をインクリメントします。
-		++currentRows[tableNames.size() - 1];
+		++currentRows[queryInfo.tableNames.size() - 1];
 
 		// 最後のテーブルが最終行になっていた場合は先頭に戻し、順に前のテーブルのカレント行をインクリメントします。
-		for (int i = tableNames.size() - 1; currentRows[i] == inputData[i].end() && 0 < i; --i){
+		for (int i = queryInfo.tableNames.size() - 1; currentRows[i] == inputData[i].end() && 0 < i; --i){
 			++currentRows[i - 1];
 			currentRows[i] = inputData[i].begin();
 		}
@@ -842,11 +844,11 @@ void SqlQuery::WriteCsv()
 	}
 
 	// ORDER句による並び替えの処理を行います。
-	if (!orderByColumns.empty()){
+	if (!queryInfo.orderByColumns.empty()){
 		// ORDER句で指定されている列が、全ての入力行の中のどの行なのかを計算します。
 		vector<int> orderByColumnIndexes; // ORDER句で指定された列の、すべての行の中でのインデックスです。
 
-		for (auto &orderByColumn : orderByColumns) {
+		for (auto &orderByColumn : queryInfo.orderByColumns) {
 			found = false;
 			for (size_t i = 0; i < allInputColumns.size(); ++i){
 				if (Equali(orderByColumn.columnName, allInputColumns[i].columnName) &&
@@ -887,7 +889,7 @@ void SqlQuery::WriteCsv()
 					}
 
 					// 降順ならcmpの大小を入れ替えます。
-					if (orders[k] == TokenKind::DESC){
+					if (queryInfo.orders[k] == TokenKind::DESC){
 						cmp *= -1;
 					}
 					if (cmp < 0){
@@ -919,9 +921,9 @@ void SqlQuery::WriteCsv()
 	}
 
 	// 出力ファイルに列名を出力します。
-	for (size_t i = 0; i < selectColumns.size(); ++i){
+	for (size_t i = 0; i < queryInfo.selectColumns.size(); ++i){
 		outputFile << outputColumns[i].columnName;
-		if (i < selectColumns.size() - 1){
+		if (i < queryInfo.selectColumns.size() - 1){
 			outputFile << ",";
 		}
 		else{
@@ -942,7 +944,7 @@ void SqlQuery::WriteCsv()
 				break;
 			}
 
-			if (i++ < selectColumns.size() - 1){
+			if (i++ < queryInfo.selectColumns.size() - 1){
 				outputFile << ",";
 			}
 			else{
