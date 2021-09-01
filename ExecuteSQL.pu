@@ -12,7 +12,6 @@ class SqlQueryInfo {
 class SqlQuery {
 	-vector<ifstream> inputTableFiles
 	-ofstream outputFile
-	-bool found
 	-vector<vector<vector<Data>>> inputData
 	-vector<vector<Data>> outputData
 	-vector<vector<Data>> allColumnOutputData	

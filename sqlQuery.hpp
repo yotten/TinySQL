@@ -15,7 +15,6 @@
 class SqlQuery {
 	std::vector<std::ifstream> inputTableFiles;							//!< 読み込むファイルの全ての入力ストリーム
 	std::ofstream outputFile;										//!< 書き込むファイルのファイルポインタです。
-	bool found = false;                                     //!< 検索時に見つかったかどうかの結果を一時的に保存します。
 	std::vector<std::vector<std::vector<Data>>> inputData;						//!< 入力データです。
 	std::vector<std::vector<Data>> outputData;							//!< 出力データです。
 	std::vector<std::vector<Data>> allColumnOutputData;					//!< 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
