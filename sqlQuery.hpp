@@ -14,7 +14,6 @@
 //! ファイルに対して実行するSQLを表すクラスです。
 class SqlQuery {
 	std::ofstream outputFile;										//!< 書き込むファイルのファイルポインタです。
-	std::vector<std::vector<std::vector<Data>>> inputData;						//!< 入力データです。
 	std::vector<std::vector<Data>> outputData;							//!< 出力データです。
 	std::vector<std::vector<Data>> allColumnOutputData;					//!< 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
