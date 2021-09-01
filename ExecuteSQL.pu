@@ -31,8 +31,8 @@ class SqlQuery {
 	-bool Equali(const string str1, const string str2)
 	-const shared_ptr<vector<Token>> GetTokens(const string sql) const;
 	-const shared_ptr<const SqlQueryInfo> AnalyzeTokens(const vector<const Token> &tokens) const
-	-void ReadCsv()
-	-void WriteCsv()
+	-const shared_ptr<vector<vector<vector<Data>>>> ReadCsv(const SqlQueryInfo& queryInfo)
+	-void WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data>>> &inputData)
 	+SqlQuery()
 	+int Execute(const string sql, const string outputFileName)
 }

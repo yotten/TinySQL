@@ -41,8 +41,14 @@ class SqlQuery {
     //! @param [in] tokens 解析の対象となるトークンです。
     //! @return 解析した結果の情報です。
     const std::shared_ptr<const SqlQueryInfo> AnalyzeTokens(const std::vector<Token> &tokens) const;
-    const std::shared_ptr<std::vector<std::vector<std::vector<Data>>>> ReadCsv(const SqlQueryInfo& queryInfo);                 //! CSVファイルから入力データを読み取ります。
-	void WriteCsv(const SqlQueryInfo& queryInfo, std::vector<std::vector<std::vector<Data>>> &inputData);                //! CSVファイルに出力データを書き込みます。
+    //! CSVファイルから入力データを読み取ります。
+    //! @param [in] queryInfo SQLの情報です。
+	//! @return ファイルから読み取ったデータです。
+    const std::shared_ptr<std::vector<std::vector<std::vector<Data>>>> ReadCsv(const SqlQueryInfo& queryInfo);
+    //! CSVファイルに出力データを書き込みます。
+    //! @param [in] queryInfo SQLの情報です。
+	//! @param [in] inputData ファイルから読み取ったデータです。
+	void WriteCsv(const SqlQueryInfo& queryInfo, std::vector<std::vector<std::vector<Data>>> &inputData);
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();
