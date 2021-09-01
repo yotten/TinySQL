@@ -490,8 +490,11 @@ const shared_ptr<const SqlQueryInfo> SqlQuery::AnalyzeTokens(const vector<Token>
 }
 
 //! CSVファイルから入力データを読み取ります。
-void SqlQuery::ReadCsv(const SqlQueryInfo& queryInfo)
+const shared_ptr<vector<vector<vector<Data>>>> SqlQuery::ReadCsv(const SqlQueryInfo& queryInfo)
 {
+	auto ret = make_shared<vector<vector<vector<Data>>>>();
+	auto &inputData = *ret;
+
 	for (size_t i = 0; i < queryInfo.tableNames.size(); ++i){
 		// 入力ファイルを開きます。
 		inputTableFiles.push_back(ifstream(queryInfo.tableNames[i] + ".csv"));
@@ -575,10 +578,11 @@ void SqlQuery::ReadCsv(const SqlQueryInfo& queryInfo)
 			}
 		}
 	}
+	return ret;
 }
 
 //! CSVファイルに出力データを書き込みます。
-void SqlQuery::WriteCsv(const SqlQueryInfo& queryInfo)
+void SqlQuery::WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data>>> &inputData)
 {
 	SqlQueryInfo info = queryInfo;
 	vector<Column> allInputColumns; // 入力に含まれるすべての列の一覧です。
@@ -992,8 +996,8 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 	try {
 		auto tokens = *GetTokens(sql);
 		auto queryInfo = *AnalyzeTokens(tokens);
-		ReadCsv(queryInfo);
-		WriteCsv(queryInfo);
+		auto inputData = ReadCsv(queryInfo);
+		WriteCsv(queryInfo, *inputData);
 
 		return static_cast<int>(ResultValue::OK);
 	}
