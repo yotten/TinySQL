@@ -13,7 +13,6 @@
 
 //! ファイルに対して実行するSQLを表すクラスです。
 class SqlQuery {
-	std::vector<std::ifstream> inputTableFiles;							//!< 読み込むファイルの全ての入力ストリーム
 	std::ofstream outputFile;										//!< 書き込むファイルのファイルポインタです。
 	std::vector<std::vector<std::vector<Data>>> inputData;						//!< 入力データです。
 	std::vector<std::vector<Data>> outputData;							//!< 出力データです。

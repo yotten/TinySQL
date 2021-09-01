@@ -494,6 +494,7 @@ const shared_ptr<vector<vector<vector<Data>>>> SqlQuery::ReadCsv(const SqlQueryI
 {
 	auto ret = make_shared<vector<vector<vector<Data>>>>();
 	auto &inputData = *ret;
+	vector<ifstream> inputTableFiles; // 読み込む入力ファイルの全てのファイルポインタです。
 
 	for (size_t i = 0; i < queryInfo.tableNames.size(); ++i){
 		// 入力ファイルを開きます。

@@ -10,7 +10,6 @@ class SqlQueryInfo {
 	+vector<Column> orderByColumns
 }
 class SqlQuery {
-	-vector<ifstream> inputTableFiles
 	-ofstream outputFile
 	-vector<vector<vector<Data>>> inputData
 	-vector<vector<Data>> outputData
