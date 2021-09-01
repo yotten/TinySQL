@@ -13,8 +13,6 @@
 
 //! ファイルに対して実行するSQLを表すクラスです。
 class SqlQuery {
-	std::ofstream outputFile;										//!< 書き込むファイルのファイルポインタです。
-
 	const std::string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; //!< 全てのアルファベットの大文字小文字とアンダーバーです。
 	const std::string alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; //!< 全ての数字とアルファベットの大文字小文字とアンダーバーです。
 	const std::string signNum = "+-0123456789"; //!< 全ての符号と数字です。
@@ -27,8 +25,6 @@ class SqlQuery {
 
     std::vector<std::vector<Column>> inputColumns;
 
-    std::string m_outputFileName;   //!< outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
-    
     bool Equali(const std::string str1, const std::string str2);
 	//! @param [in] sql トークンに分解する元となるSQLです。
 	//! @return 切り出されたトークンです。
@@ -43,7 +39,7 @@ class SqlQuery {
     //! CSVファイルに出力データを書き込みます。
     //! @param [in] queryInfo SQLの情報です。
 	//! @param [in] inputData ファイルから読み取ったデータです。
-	void WriteCsv(const SqlQueryInfo& queryInfo, std::vector<std::vector<std::vector<Data>>> &inputData);
+	void WriteCsv(const std::string outputFileName, const SqlQueryInfo& queryInfo, std::vector<std::vector<std::vector<Data>>> &inputData);
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();

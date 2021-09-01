@@ -583,7 +583,7 @@ const shared_ptr<vector<vector<vector<Data>>>> SqlQuery::ReadCsv(const SqlQueryI
 }
 
 //! CSVファイルに出力データを書き込みます。
-void SqlQuery::WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data>>> &inputData)
+void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryInfo, vector<vector<vector<Data>>> &inputData)
 {
 	SqlQueryInfo info = queryInfo;
 	vector<Column> allInputColumns; // 入力に含まれるすべての列の一覧です。
@@ -591,6 +591,7 @@ void SqlQuery::WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data
 	bool found;
 	vector<vector<Data>> outputData; // 出力データです。
 	vector<vector<Data>> allColumnOutputData; // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
+	ofstream outputFile; // 書き込むファイルのファイルポインタです。
 
 	// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 	for (size_t i = 0; i < info.tableNames.size(); ++i){
@@ -937,7 +938,7 @@ void SqlQuery::WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data
 	}
 
 	// 出力ファイルを開きます。
-	outputFile = ofstream(m_outputFileName);
+	outputFile = ofstream(outputFileName);
 	if (outputFile.bad()){
 		throw ResultValue::ERR_FILE_OPEN;
 	}
@@ -995,13 +996,11 @@ void SqlQuery::WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data
 //! @return 実行した結果の状態です。
 int SqlQuery::Execute(const string sql, const string outputFileName)
 {
-	m_outputFileName = outputFileName;
-
 	try {
 		auto tokens = *GetTokens(sql);
 		auto queryInfo = *AnalyzeTokens(tokens);
 		auto inputData = ReadCsv(queryInfo);
-		WriteCsv(queryInfo, *inputData);
+		WriteCsv(outputFileName, queryInfo, *inputData);
 
 		return static_cast<int>(ResultValue::OK);
 	}
