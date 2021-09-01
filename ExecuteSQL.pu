@@ -10,12 +10,7 @@ class SqlQueryInfo {
 	+vector<Column> orderByColumns
 }
 class SqlQuery {
-	-vector<ifstream> inputTableFiles
 	-ofstream outputFile
-	-bool found
-	-vector<vector<vector<Data>>> inputData
-	-vector<vector<Data>> outputData
-	-vector<vector<Data>> allColumnOutputData	
 	-const string alpahUnder
 	-const string alpahNumUnder
 	-const string signNum
@@ -27,7 +22,6 @@ class SqlQuery {
 	-vector<const Token> tokens
 	-vector<vector<Column>> inputColumns
 	-void CheckClosingFiles()
-	-string m_outputFileName
 	-bool Equali(const string str1, const string str2)
 	-const shared_ptr<vector<Token>> GetTokens(const string sql) const;
 	-const shared_ptr<const SqlQueryInfo> AnalyzeTokens(const vector<const Token> &tokens) const
