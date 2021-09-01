@@ -190,8 +190,11 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 }
 
 //! トークンを解析してSQLの構文で指定された情報を取得します。
-void SqlQuery::AnalyzeTokens()
+//! @param [in] tokens 解析の対象となるトークンです。
+//! @return 解析した結果の情報です。
+const shared_ptr<const SqlQueryInfo> SqlQuery::AnalyzeTokens(const vector<Token> &tokens) const
 {
+	auto queryInfo = make_shared<SqlQueryInfo>();
 	// トークン列を解析し、構文を読み取ります。
 	auto tokenCursol = tokens.begin();
 	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです
@@ -220,13 +223,13 @@ void SqlQuery::AnalyzeTokens()
 			}
 			if (tokenCursol->kind == TokenKind::IDENTIFIER){
 				// テーブル名が指定されていない場合と仮定して読み込みます。
-				queryInfo.selectColumns.push_back(Column(tokenCursol->word.c_str()));
+				queryInfo->selectColumns.push_back(Column(tokenCursol->word.c_str()));
 				++tokenCursol;
 				if (tokenCursol->kind == TokenKind::DOT){
 					++tokenCursol;
 					if (tokenCursol->kind == TokenKind::IDENTIFIER){
 						// テーブル名が指定されていることがわかったので読み替えます。
-						queryInfo.selectColumns.back() = Column(queryInfo.selectColumns.back().columnName, tokenCursol->word);
+						queryInfo->selectColumns.back() = Column(queryInfo->selectColumns.back().columnName, tokenCursol->word);
 						++tokenCursol;
 					}
 					else{
@@ -268,13 +271,13 @@ void SqlQuery::AnalyzeTokens()
 					}
 					if (tokenCursol->kind == TokenKind::IDENTIFIER){
 						// テーブル名が指定されていない場合と仮定して読み込みます。
-						queryInfo.orderByColumns.push_back(Column(tokenCursol->word));
+						queryInfo->orderByColumns.push_back(Column(tokenCursol->word));
 						++tokenCursol;
 						if (tokenCursol->kind == TokenKind::DOT){
 							++tokenCursol;
 							if (tokenCursol->kind == TokenKind::IDENTIFIER) {
 								// テーブル名が指定されていることがわかったので読み替えます。
-								queryInfo.orderByColumns.back() = Column(queryInfo.orderByColumns.back().columnName, tokenCursol->word);
+								queryInfo->orderByColumns.back() = Column(queryInfo->orderByColumns.back().columnName, tokenCursol->word);
 								++tokenCursol;
 							}
 							else{
@@ -284,16 +287,16 @@ void SqlQuery::AnalyzeTokens()
 
 						// 並び替えの昇順、降順を指定します。
 						if (tokenCursol->kind == TokenKind::ASC) {
-							queryInfo.orders.push_back(TokenKind::ASC);
+							queryInfo->orders.push_back(TokenKind::ASC);
 							++tokenCursol;
 						}
 						else if (tokenCursol->kind == TokenKind::DESC) {
-							queryInfo.orders.push_back(TokenKind::DESC);
+							queryInfo->orders.push_back(TokenKind::DESC);
 							++tokenCursol;
 						}
 						else {
 							// 指定がない場合は昇順となります。
-							queryInfo.orders.push_back(TokenKind::ASC);
+							queryInfo->orders.push_back(TokenKind::ASC);
 						}
 					}
 					else{
@@ -316,16 +319,16 @@ void SqlQuery::AnalyzeTokens()
 				// オペランドを読み込みます。
 
 				// オペランドのノードを新しく生成します。
-				queryInfo.whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
+				queryInfo->whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
 				if (currentNode){
 					// 現在のノードを右の子にずらし、元の位置に新しいノードを挿入します。
-					currentNode->right = queryInfo.whereExtensionNodes.back();
+					currentNode->right = queryInfo->whereExtensionNodes.back();
 					currentNode->right->parent = currentNode;
 					currentNode = currentNode->right;
 				}
 				else{
 					// 最初はカレントノードに新しいノードを入れます。
-					currentNode = queryInfo.whereExtensionNodes.back();
+					currentNode = queryInfo->whereExtensionNodes.back();
 				}
 
 				// カッコ開くを読み込みます。
@@ -427,8 +430,8 @@ void SqlQuery::AnalyzeTokens()
 					} while (!searched && tmp->parent && (tmp->parent->middleOperator.order <= foundOperator->order || tmp->parent->inParen));
 
 					// 演算子のノードを新しく生成します。
-					queryInfo.whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
-					currentNode = queryInfo.whereExtensionNodes.back();
+					queryInfo->whereExtensionNodes.push_back(make_shared<ExtensionTreeNode>());
+					currentNode = queryInfo->whereExtensionNodes.back();
 					currentNode->middleOperator = *foundOperator;
 
 					// 見つかった場所に新しいノードを配置します。これまでその位置にあったノードは左の子となるよう、親ノードと子ノードのポインタをつけかえます。
@@ -448,9 +451,9 @@ void SqlQuery::AnalyzeTokens()
 			}
 
 			// 木を根に向かってさかのぼり、根のノードを設定します。
-			queryInfo.whereTopNode = currentNode;
-			while (queryInfo.whereTopNode->parent){
-				queryInfo.whereTopNode = queryInfo.whereTopNode->parent;
+			queryInfo->whereTopNode = currentNode;
+			while (queryInfo->whereTopNode->parent){
+				queryInfo->whereTopNode = queryInfo->whereTopNode->parent;
 			}
 		}
 	}
@@ -469,7 +472,7 @@ void SqlQuery::AnalyzeTokens()
 			++tokenCursol;
 		}
 		if (tokenCursol->kind == TokenKind::IDENTIFIER){
-			queryInfo.tableNames.push_back(tokenCursol->word);
+			queryInfo->tableNames.push_back(tokenCursol->word);
 			++tokenCursol;
 		}
 		else{
@@ -482,6 +485,8 @@ void SqlQuery::AnalyzeTokens()
 	if (tokenCursol != tokens.end()) {
 		throw ResultValue::ERR_SQL_SYNTAX;
 	}
+
+	return queryInfo;
 }
 
 //! CSVファイルから入力データを読み取ります。
@@ -991,8 +996,8 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 	m_outputFileName = outputFileName;
 
 	try {
-		tokens = *GetTokens(sql);
-		AnalyzeTokens();
+		auto tokens = *GetTokens(sql);
+		queryInfo = *AnalyzeTokens(tokens);
 		ReadCsv();
 		WriteCsv();
 

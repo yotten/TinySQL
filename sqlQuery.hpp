@@ -30,8 +30,6 @@ class SqlQuery {
 	const std::vector<Token> signConditions;    //!< 記号をトークンとして認識するための記号一覧情報です。
 	const std::vector<Operator> operators;      //!< 演算子の情報です。
 
-	std::vector<Token> tokens; //!< SQLを分割したトークンです。
-
     SqlQueryInfo queryInfo; //! SQLを解析した結果の情報です。
     std::vector<std::vector<Column>> inputColumns;
 
@@ -41,7 +39,9 @@ class SqlQuery {
 	//! @param [in] sql トークンに分解する元となるSQLです。
 	//! @return 切り出されたトークンです。
 	const std::shared_ptr<std::vector<Token>> GetTokens(const std::string sql) const;
-	void AnalyzeTokens();           //! トークンを解析してSQLの構文で指定された情報を取得します。
+	//! @param [in] tokens 解析の対象となるトークンです。
+	//! @return 解析した結果の情報です。
+	const std::shared_ptr<const SqlQueryInfo> AnalyzeTokens(const std::vector<Token> &tokens) const;
     void ReadCsv();                 //! CSVファイルから入力データを読み取ります。
 	void WriteCsv();                //! CSVファイルに出力データを書き込みます。
 	void CheckClosingFiles();       //! ファイルのClose処理を行い、正常に行われたか確認します。

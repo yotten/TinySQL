@@ -8,6 +8,7 @@
 #include <string>
 #include <memory>
 
+//! SqlQueryの構文情報を扱うクラスです。
 class SqlQueryInfo
 {
 public:
