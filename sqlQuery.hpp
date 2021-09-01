@@ -43,8 +43,7 @@ class SqlQuery {
 	//! @return 解析した結果の情報です。
 	const std::shared_ptr<const SqlQueryInfo> AnalyzeTokens(const std::vector<Token> &tokens) const;
     void ReadCsv();                 //! CSVファイルから入力データを読み取ります。
-	void WriteCsv();                //! CSVファイルに出力データを書き込みます。
-	void CheckClosingFiles();       //! ファイルのClose処理を行い、正常に行われたか確認します。
+	void WriteCsv(const SqlQueryInfo& queryInfo);                //! CSVファイルに出力データを書き込みます。
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();
