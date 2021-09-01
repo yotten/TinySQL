@@ -590,6 +590,7 @@ void SqlQuery::WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data
 	vector<vector<vector<Data>>::iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	bool found;
 	vector<vector<Data>> outputData; // 出力データです。
+	vector<vector<Data>> allColumnOutputData; // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
 	// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 	for (size_t i = 0; i < info.tableNames.size(); ++i){

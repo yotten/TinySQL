@@ -14,7 +14,6 @@
 //! ファイルに対して実行するSQLを表すクラスです。
 class SqlQuery {
 	std::ofstream outputFile;										//!< 書き込むファイルのファイルポインタです。
-	std::vector<std::vector<Data>> allColumnOutputData;					//!< 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
 	const std::string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; //!< 全てのアルファベットの大文字小文字とアンダーバーです。
 	const std::string alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; //!< 全ての数字とアルファベットの大文字小文字とアンダーバーです。

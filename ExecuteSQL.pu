@@ -11,7 +11,6 @@ class SqlQueryInfo {
 }
 class SqlQuery {
 	-ofstream outputFile
-	-vector<vector<Data>> allColumnOutputData	
 	-const string alpahUnder
 	-const string alpahNumUnder
 	-const string signNum
