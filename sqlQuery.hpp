@@ -30,7 +30,6 @@ class SqlQuery {
 	const std::vector<Token> signConditions;    //!< 記号をトークンとして認識するための記号一覧情報です。
 	const std::vector<Operator> operators;      //!< 演算子の情報です。
 
-    SqlQueryInfo queryInfo; //! SQLを解析した結果の情報です。
     std::vector<std::vector<Column>> inputColumns;
 
     std::string m_outputFileName;   //!< outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
@@ -39,12 +38,17 @@ class SqlQuery {
 	//! @param [in] sql トークンに分解する元となるSQLです。
 	//! @return 切り出されたトークンです。
 	const std::shared_ptr<std::vector<Token>> GetTokens(const std::string sql) const;
-	//! @param [in] tokens 解析の対象となるトークンです。
-	//! @return 解析した結果の情報です。
-	const std::shared_ptr<const SqlQueryInfo> AnalyzeTokens(const std::vector<Token> &tokens) const;
-    void ReadCsv();                 //! CSVファイルから入力データを読み取ります。
-	void WriteCsv();                //! CSVファイルに出力データを書き込みます。
-	void CheckClosingFiles();       //! ファイルのClose処理を行い、正常に行われたか確認します。
+    //! @param [in] tokens 解析の対象となるトークンです。
+    //! @return 解析した結果の情報です。
+    const std::shared_ptr<const SqlQueryInfo> AnalyzeTokens(const std::vector<Token> &tokens) const;
+    //! CSVファイルから入力データを読み取ります。
+    //! @param [in] queryInfo SQLの情報です。
+	//! @return ファイルから読み取ったデータです。
+    const std::shared_ptr<std::vector<std::vector<std::vector<Data>>>> ReadCsv(const SqlQueryInfo& queryInfo);
+    //! CSVファイルに出力データを書き込みます。
+    //! @param [in] queryInfo SQLの情報です。
+	//! @param [in] inputData ファイルから読み取ったデータです。
+	void WriteCsv(const SqlQueryInfo& queryInfo, std::vector<std::vector<std::vector<Data>>> &inputData);
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();
