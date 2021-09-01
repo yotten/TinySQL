@@ -1,6 +1,7 @@
 #include "sqlQuery.hpp"
 #include "extension_tree_node.hpp"
 #include "column_index.hpp"
+#include "sqlQueryInfo.hpp"
 
 using namespace std;
 
