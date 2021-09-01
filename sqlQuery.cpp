@@ -490,7 +490,7 @@ const shared_ptr<const SqlQueryInfo> SqlQuery::AnalyzeTokens(const vector<Token>
 }
 
 //! CSVファイルから入力データを読み取ります。
-void SqlQuery::ReadCsv()
+void SqlQuery::ReadCsv(const SqlQueryInfo& queryInfo)
 {
 	for (size_t i = 0; i < queryInfo.tableNames.size(); ++i){
 		// 入力ファイルを開きます。
@@ -991,8 +991,8 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 
 	try {
 		auto tokens = *GetTokens(sql);
-		queryInfo = *AnalyzeTokens(tokens);
-		ReadCsv();
+		auto queryInfo = *AnalyzeTokens(tokens);
+		ReadCsv(queryInfo);
 		WriteCsv(queryInfo);
 
 		return static_cast<int>(ResultValue::OK);
