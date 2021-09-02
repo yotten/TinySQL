@@ -20,7 +20,6 @@ class SqlQuery {
 	-const vector<const Token> signConditions
 	-const vector<const Operator> operators
 	-vector<const Token> tokens
-	-vector<vector<Column>> inputColumns
 	-void CheckClosingFiles()
 	-bool Equali(const string str1, const string str2)
 	-const shared_ptr<vector<Token>> GetTokens(const string sql) const;

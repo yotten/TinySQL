@@ -25,8 +25,6 @@ class SqlQuery {
 	const std::vector<Operator> operators;      //!< 演算子の情報です。
     std::shared_ptr<const SqlQueryInfo> queryInfo; //!< SQLに記述された内容です。
 
-    std::vector<std::vector<Column>> inputColumns;
-
     bool Equali(const std::string str1, const std::string str2);
 	//! @param [in] sql トークンに分解する元となるSQLです。
 	//! @return 切り出されたトークンです。
