@@ -583,11 +583,11 @@ const shared_ptr<const vector<InputTable>> SqlQuery::ReadCsv(const SqlQueryInfo&
 }
 
 //! CSVファイルに出力データを書き込みます。
-void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryInfo, vector<vector<vector<Data>>> &inputData)
+void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryInfo, const vector<InputTable> &inputTables)
 {
 	SqlQueryInfo info = queryInfo;
 	vector<Column> allInputColumns; // 入力に含まれるすべての列の一覧です。
-	vector<vector<vector<Data>>::iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
+	vector<vector<vector<Data>>::const_iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	bool found;
 	vector<vector<Data>> outputData; // 出力データです。
 	vector<vector<Data>> allColumnOutputData; // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
@@ -595,7 +595,7 @@ void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryIn
 
 	// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 	for (size_t i = 0; i < info.tableNames.size(); ++i){
-		transform(inputColumns[i].begin(), inputColumns[i].end(), back_inserter(allInputColumns),
+		transform(inputTables[i].columns.begin(), inputTables[i].columns.end(), back_inserter(allInputColumns),
 			[&](const Column& column) { return Column(info.tableNames[i], column.columnName); });
 	}
 
@@ -612,7 +612,7 @@ void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryIn
 		found = false;
 		for (size_t i = 0; i < info.tableNames.size(); ++i){
 			int j = 0;
-			for (auto &inputColumn : inputColumns[i]) {
+			for (auto &inputColumn : inputTables[i].columns) {
 				if (Equali(selectColumn.columnName, inputColumn.columnName) &&
 					(selectColumn.tableName.empty() || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 					//!*selectTableNameCursol && !*inputTableNameCursol)){
@@ -639,7 +639,7 @@ void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryIn
 	// 出力する列名を設定します。
 	transform(selectColumnIndexes.begin(), selectColumnIndexes.end(), back_inserter(outputColumns),
 		[&](const ColumnIndex& index) {
-			return inputColumns[index.table][index.column];
+			return inputTables[index.table].columns[index.column];
 		});
 
 	if (info.whereTopNode){
@@ -653,9 +653,9 @@ void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryIn
 		}
 	}
 
-	transform(inputData.begin(), inputData.end(), back_inserter(currentRows),
-		[](vector<vector<Data>>& rows) {
-			return rows.begin();
+	transform(inputTables.begin(), inputTables.end(), back_inserter(currentRows),
+		[](const InputTable& table) {
+			return table.data.begin();
 		});
 
 	// 出力するデータを設定します。
@@ -855,13 +855,13 @@ void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryIn
 		++currentRows[info.tableNames.size() - 1];
 
 		// 最後のテーブルが最終行になっていた場合は先頭に戻し、順に前のテーブルのカレント行をインクリメントします。
-		for (int i = info.tableNames.size() - 1; currentRows[i] == inputData[i].end() && 0 < i; --i){
+		for (int i = info.tableNames.size() - 1; currentRows[i] == inputTables[i].data.end() && 0 < i; --i){
 			++currentRows[i - 1];
-			currentRows[i] = inputData[i].begin();
+			currentRows[i] = inputTables[i].data.begin();
 		}
 
 		// 最初のテーブルが最後の行を超えたなら出力行の生成は終わりです。
-		if (currentRows[0] == inputData[0].end()) {
+		if (currentRows[0] == inputTables[0].data.end()) {
 			break;
 		}
 	}
@@ -1000,12 +1000,7 @@ int SqlQuery::Execute(const string sql, const string outputFileName)
 		auto tokens = *GetTokens(sql);
 		auto queryInfo = *AnalyzeTokens(tokens);
 		auto inputTables = ReadCsv(queryInfo);
-		vector<vector<vector<Data>>> inputData;
-		for (auto &table : *inputTables) {
-			inputData.push_back(table.data);
-			inputColumns.push_back(table.columns);
-		}
-		WriteCsv(outputFileName, queryInfo, inputData);
+		WriteCsv(outputFileName, queryInfo, *inputTables);
 
 		return static_cast<int>(ResultValue::OK);
 	}

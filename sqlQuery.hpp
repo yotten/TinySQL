@@ -40,7 +40,7 @@ class SqlQuery {
     //! CSVファイルに出力データを書き込みます。
     //! @param [in] queryInfo SQLの情報です。
 	//! @param [in] inputData ファイルから読み取ったデータです。
-	void WriteCsv(const std::string outputFileName, const SqlQueryInfo& queryInfo, std::vector<std::vector<std::vector<Data>>> &inputData);
+	void WriteCsv(const std::string outputFileName, const SqlQueryInfo& queryInfo, const std::vector<InputTable> &inputTables);
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
 	SqlQuery();
