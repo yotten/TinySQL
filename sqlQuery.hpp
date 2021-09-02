@@ -2,6 +2,7 @@
 #include "data.hpp"
 #include "operator.hpp"
 #include "sqlQueryInfo.hpp"
+#include "inputTable.hpp"
 
 #include <string>
 #include <fstream>
@@ -35,7 +36,7 @@ class SqlQuery {
     //! CSVファイルから入力データを読み取ります。
     //! @param [in] queryInfo SQLの情報です。
 	//! @return ファイルから読み取ったデータです。
-    const std::shared_ptr<std::vector<std::vector<std::vector<Data>>>> ReadCsv(const SqlQueryInfo& queryInfo);
+    const std::shared_ptr<const std::vector<InputTable>> ReadCsv(const SqlQueryInfo& queryInfo);
     //! CSVファイルに出力データを書き込みます。
     //! @param [in] queryInfo SQLの情報です。
 	//! @param [in] inputData ファイルから読み取ったデータです。

@@ -9,7 +9,7 @@ test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension
 testExecuteSQL.o: testExecuteSQL.cpp 
 	g++ -c $(CFLAGS) testExecuteSQL.cpp
 
-ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp extension_tree_node.hpp column_index.hpp sqlQuery.hpp
+ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp extension_tree_node.hpp column_index.hpp sqlQuery.hpp inputTable.hpp 
 	g++ -c $(CFLAGS) ExecuteSQL.cpp
 
 data.o: data.cpp data.hpp
