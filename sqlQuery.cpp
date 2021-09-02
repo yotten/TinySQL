@@ -6,7 +6,8 @@
 using namespace std;
 
 //! SqlQueryクラスの新しいインスタンスを初期化します。
-SqlQuery::SqlQuery() :
+//! @param [in] sql 実行するSQLです。
+SqlQuery::SqlQuery(const string sql) :
 	keywordConditions({
 		{ TokenKind::AND, "AND" },
 		{ TokenKind::ASC, "ASC" },
@@ -46,6 +47,8 @@ SqlQuery::SqlQuery() :
 		{ TokenKind::AND, 4 },
 		{ TokenKind::OR, 5 }})
 {
+	auto tokens = GetTokens(sql);
+	queryInfo = AnalyzeTokens(*tokens);
 }
 
 //! 二つの文字列を、大文字小文字を区別せずに比較し、等しいかどうかです。
@@ -476,17 +479,18 @@ const shared_ptr<const SqlQueryInfo> SqlQuery::AnalyzeTokens(const vector<Token>
 }
 
 //! CSVファイルから入力データを読み取ります。
-const shared_ptr<const vector<InputTable>> SqlQuery::ReadCsv(const SqlQueryInfo& queryInfo)
+//! @return ファイルから読み取ったデータです。
+const shared_ptr<const vector<InputTable>> SqlQuery::ReadCsv() const
 {
 	auto ret = make_shared<vector<InputTable>>();
 	auto &tables = *ret;
 	vector<ifstream> inputTableFiles; // 読み込む入力ファイルの全てのファイルポインタです。
 
-	for (size_t i = 0; i < queryInfo.tableNames.size(); ++i){
+	for (size_t i = 0; i < queryInfo->tableNames.size(); ++i){
 		tables.push_back(InputTable());
 		auto &table = tables.back();
 		// 入力ファイルを開きます。
-		inputTableFiles.push_back(ifstream(queryInfo.tableNames[i] + ".csv"));
+		inputTableFiles.push_back(ifstream(queryInfo->tableNames[i] + ".csv"));
 		if (!inputTableFiles.back()) {
 			throw ResultValue::ERR_FILE_OPEN;
 		}
@@ -502,7 +506,7 @@ const shared_ptr<const vector<InputTable>> SqlQuery::ReadCsv(const SqlQueryInfo&
 				// 列名を一つ読みます。
 				auto columnStart = charactorCursol;
 				charactorCursol = find(charactorCursol, lineEnd, ',');
-				table.columns.push_back(Column(queryInfo.tableNames[i], string(columnStart, charactorCursol)));
+				table.columns.push_back(Column(queryInfo->tableNames[i], string(columnStart, charactorCursol)));
 				// 入力行のカンマの分を読み進めます。
 				if (charactorCursol != lineEnd) {
 					++charactorCursol;
@@ -568,9 +572,9 @@ const shared_ptr<const vector<InputTable>> SqlQuery::ReadCsv(const SqlQueryInfo&
 }
 
 //! CSVファイルに出力データを書き込みます。
-void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryInfo, const vector<InputTable> &inputTables)
+void SqlQuery::WriteCsv(const string outputFileName, const vector<InputTable> &inputTables) const
 {
-	SqlQueryInfo info = queryInfo;
+	SqlQueryInfo info = *queryInfo;
 	vector<Column> allInputColumns; // 入力に含まれるすべての列の一覧です。
 	vector<vector<vector<Data>>::const_iterator> currentRows; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	bool found;
@@ -976,12 +980,9 @@ void SqlQuery::WriteCsv(const string outputFileName, const SqlQueryInfo& queryIn
 }
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
-//! @param [in] sql 実行するSQLです。
 //! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
-void SqlQuery::Execute(const string sql, const string outputFileName)
+void SqlQuery::Execute(const string outputFileName)
 {
-	auto tokens = *GetTokens(sql);
-	auto queryInfo = *AnalyzeTokens(tokens);
-	auto inputTables = ReadCsv(queryInfo);
-	WriteCsv(outputFileName, queryInfo, *inputTables);
+	auto inputTables = ReadCsv();
+	WriteCsv(outputFileName, *inputTables);
 }

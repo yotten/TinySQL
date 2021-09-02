@@ -26,9 +26,10 @@ class SqlQuery {
 	-const shared_ptr<vector<Token>> GetTokens(const string sql) const;
 	-const shared_ptr<const SqlQueryInfo> AnalyzeTokens(const vector<const Token> &tokens) const
 	-const shared_ptr<vector<vector<vector<Data>>>> ReadCsv(const SqlQueryInfo& queryInfo)
-	-void WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data>>> &inputData)
-	+SqlQuery()
-	+void Execute(const string sql, const string outputFileName)
+	-const shared_ptr<const vector<InputTable>> ReadCsv() const
+	-void WriteCsv(const string outputFileName, const vector<InputTable> &inputTables) const
+	+SqlQuery(const string sql)
+	+void Execute(const string outputFileName)
 }
 class ExecuteSQL {
 	
@@ -36,7 +37,7 @@ class ExecuteSQL {
 
 class InputTable {
 	+vector<Column> columns
-	+vector<std::vector<Data>> data
+	+vector<vector<Data>> data
 }
 
 class Data {
@@ -141,7 +142,8 @@ ResultValue <-- SqlQuery
 SqlQueryInfo <-- SqlQuery
 InputTable <-- SqlQuery
 
-<-- InputTable
+Column <-- InputTable
+Data <-- InputTable
 
 Column <-- SqlQueryInfo
 TokenKind <-- SqlQueryInfo

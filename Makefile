@@ -31,7 +31,7 @@ column_index.o: column_index.cpp column_index.hpp
 	g++ -c $(CFLAGS) column_index.cpp
 
 sqlQuery.o: sqlQuery.cpp sqlQuery.hpp sqlQueryInfo.hpp resultValue.hpp
-	g++ -c $(CFLAGS) sqlQuery.cpp
+	g++ -c $(CFLAGS) -fpermissive sqlQuery.cpp
 
 clean:
 	rm -f *.o

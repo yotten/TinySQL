@@ -85,7 +85,7 @@ int ExecuteSQL(const string, const string);
 int ExecuteSQL(const string sql, const string outputFileName)
 {
 	try {
-		SqlQuery().Execute(sql, outputFileName);
+		SqlQuery(sql).Execute(outputFileName);
 		return static_cast<int>(ResultValue::OK);
 	}
 	catch (ResultValue error) {
