@@ -47,6 +47,5 @@ public:
 	//! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 	//! @param [in] sql 実行するSQLです。
 	//! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
-	//! @return 実行した結果の状態です。
-	int Execute(const std::string sql, const std::string outputFileName);
+	void Execute(const std::string sql, const std::string outputFileName);
 };

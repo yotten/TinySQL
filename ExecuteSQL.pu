@@ -28,10 +28,15 @@ class SqlQuery {
 	-const shared_ptr<vector<vector<vector<Data>>>> ReadCsv(const SqlQueryInfo& queryInfo)
 	-void WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data>>> &inputData)
 	+SqlQuery()
-	+int Execute(const string sql, const string outputFileName)
+	+void Execute(const string sql, const string outputFileName)
 }
 class ExecuteSQL {
 	
+}
+
+class InputTable {
+	+vector<Column> columns
+	+vector<std::vector<Data>> data
 }
 
 class Data {
@@ -124,6 +129,7 @@ enum ResultValue{
 
 ExecuteSQL <-- testExecuteSQL
 SqlQuery <-- ExecuteSQL
+ResultValue <-- ExecuteSQL
 
 Data <-- SqlQuery
 Operator <-- SqlQuery
@@ -133,6 +139,9 @@ ColumnIndex <-- SqlQuery
 Column <-- SqlQuery
 ResultValue <-- SqlQuery
 SqlQueryInfo <-- SqlQuery
+InputTable <-- SqlQuery
+
+<-- InputTable
 
 Column <-- SqlQueryInfo
 TokenKind <-- SqlQueryInfo
