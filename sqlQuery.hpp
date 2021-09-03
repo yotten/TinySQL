@@ -23,8 +23,7 @@ class SqlQuery {
 	const std::vector<Token> keywordConditions; //!< キーワードをトークンとして認識するためのキーワード一覧情報です。
 	const std::vector<Token> signConditions;    //!< 記号をトークンとして認識するための記号一覧情報です。
 	const std::vector<Operator> operators;      //!< 演算子の情報です。
-
-    std::vector<std::vector<Column>> inputColumns;
+    std::shared_ptr<const SqlQueryInfo> queryInfo; //!< SQLに記述された内容です。
 
     bool Equali(const std::string str1, const std::string str2);
 	//! @param [in] sql トークンに分解する元となるSQLです。
@@ -36,17 +35,16 @@ class SqlQuery {
     //! CSVファイルから入力データを読み取ります。
     //! @param [in] queryInfo SQLの情報です。
 	//! @return ファイルから読み取ったデータです。
-    const std::shared_ptr<const std::vector<InputTable>> ReadCsv(const SqlQueryInfo& queryInfo);
+    const std::shared_ptr<const std::vector<InputTable>> ReadCsv() const;
     //! CSVファイルに出力データを書き込みます。
     //! @param [in] queryInfo SQLの情報です。
 	//! @param [in] inputData ファイルから読み取ったデータです。
-	void WriteCsv(const std::string outputFileName, const SqlQueryInfo& queryInfo, const std::vector<InputTable> &inputTables);
+	void WriteCsv(const std::string outputFileName, const std::vector<InputTable> &inputTables) const;
 public:
 	//! SqlQueryクラスの新しいインスタンスを初期化します。
-	SqlQuery();
+    //! @param [in] sql 実行するSQLです。
+	SqlQuery(const std::string sql);
 	//! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
-	//! @param [in] sql 実行するSQLです。
 	//! @param[in] outputFileName SQLの実行結果をCSVとして出力するファイル名です。拡張子を含みます。
-	//! @return 実行した結果の状態です。
-	int Execute(const std::string sql, const std::string outputFileName);
+	void Execute(const std::string outputFileName);
 };

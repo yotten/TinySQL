@@ -20,18 +20,23 @@ class SqlQuery {
 	-const vector<const Token> signConditions
 	-const vector<const Operator> operators
 	-vector<const Token> tokens
-	-vector<vector<Column>> inputColumns
 	-void CheckClosingFiles()
 	-bool Equali(const string str1, const string str2)
 	-const shared_ptr<vector<Token>> GetTokens(const string sql) const;
 	-const shared_ptr<const SqlQueryInfo> AnalyzeTokens(const vector<const Token> &tokens) const
 	-const shared_ptr<vector<vector<vector<Data>>>> ReadCsv(const SqlQueryInfo& queryInfo)
-	-void WriteCsv(const SqlQueryInfo& queryInfo, vector<vector<vector<Data>>> &inputData)
-	+SqlQuery()
-	+int Execute(const string sql, const string outputFileName)
+	-const shared_ptr<const vector<InputTable>> ReadCsv() const
+	-void WriteCsv(const string outputFileName, const vector<InputTable> &inputTables) const
+	+SqlQuery(const string sql)
+	+void Execute(const string outputFileName)
 }
 class ExecuteSQL {
 	
+}
+
+class InputTable {
+	+vector<Column> columns
+	+vector<vector<Data>> data
 }
 
 class Data {
@@ -124,6 +129,7 @@ enum ResultValue{
 
 ExecuteSQL <-- testExecuteSQL
 SqlQuery <-- ExecuteSQL
+ResultValue <-- ExecuteSQL
 
 Data <-- SqlQuery
 Operator <-- SqlQuery
@@ -133,6 +139,10 @@ ColumnIndex <-- SqlQuery
 Column <-- SqlQuery
 ResultValue <-- SqlQuery
 SqlQueryInfo <-- SqlQuery
+InputTable <-- SqlQuery
+
+Column <-- InputTable
+Data <-- InputTable
 
 Column <-- SqlQueryInfo
 TokenKind <-- SqlQueryInfo

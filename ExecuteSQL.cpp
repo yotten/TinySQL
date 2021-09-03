@@ -2,7 +2,7 @@
 
 #include "sqlQuery.hpp"
 #include "ExecuteSQL.hpp"
-
+#include "resultValue.hpp"
 //#pragma warning(disable:4996)
 
 using namespace std;
@@ -84,5 +84,11 @@ int ExecuteSQL(const string, const string);
 //! FROM USERS, CHILDREN
 int ExecuteSQL(const string sql, const string outputFileName)
 {
-	return SqlQuery().Execute(sql, outputFileName);
+	try {
+		SqlQuery(sql).Execute(outputFileName);
+		return static_cast<int>(ResultValue::OK);
+	}
+	catch (ResultValue error) {
+		return static_cast<int>(error);
+	}
 }
