@@ -79,6 +79,16 @@ class Column{
     +Column(const string columnName)
     +Column(const string tableName, const string columnName)
 }
+
+class IntLiteralReader {
+	-string alpahUnder
+	-string alpahNumUnder
+	-string signNum
+	-string num
+	-string space
+	+const std::shared_ptr<const Token> Read(std::string::const_iterator &cursol, const std::string::const_iterator& end) const;
+}
+
 enum DataType{
    	STRING
 	INTEGER
@@ -140,6 +150,9 @@ Column <-- SqlQuery
 ResultValue <-- SqlQuery
 SqlQueryInfo <-- SqlQuery
 InputTable <-- SqlQuery
+IntLiteralReader <-- SqlQuery
+
+Token <-- IntLiteralReader
 
 Column <-- InputTable
 Data <-- InputTable

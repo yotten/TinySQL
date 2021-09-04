@@ -3,6 +3,8 @@
 #include "column_index.hpp"
 #include "sqlQueryInfo.hpp"
 #include "resultValue.hpp"
+#include "intLiteralReader.hpp"
+
 using namespace std;
 
 //! SqlQueryクラスの新しいインスタンスを初期化します。
@@ -88,18 +90,11 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 		}
 
 		// 数値リテラルを読み込みます。
-
-		// 先頭文字が数字であるかどうかを確認します。
-		sqlBackPoint = sqlCursol;
-		sqlCursol = find_if(sqlCursol, sqlEnd, [&](char c){return num.find(c) == string::npos;});
-		if (sqlCursol != sqlBackPoint && (
-			alpahUnder.find(*sqlCursol) == string::npos || // 数字の後にすぐに識別子が続くのは紛らわしいので数値リテラルとは扱いません。
-			sqlCursol == sqlEnd)) {
-				tokens->push_back(Token(TokenKind::INT_LITERAL, string(sqlBackPoint, sqlCursol)));
-				continue;
-		}
-		else {
-			sqlCursol = sqlBackPoint;
+		IntLiteralReader reader;
+		auto token = reader.Read(sqlCursol, sqlEnd);
+		if (token) {
+			tokens->push_back(*token);
+			continue;
 		}
 
 		// 文字列リテラルを読み込みます。
