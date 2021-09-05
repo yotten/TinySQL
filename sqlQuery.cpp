@@ -4,6 +4,7 @@
 #include "sqlQueryInfo.hpp"
 #include "resultValue.hpp"
 #include "intLiteralReader.hpp"
+#include "stringLiteralReader.hpp"
 
 using namespace std;
 
@@ -101,18 +102,10 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 		sqlBackPoint = sqlCursol;
 
 		// 文字列リテラルを開始するシングルクォートを判別し、読み込みます。
-		// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
-		if (*sqlCursol  == "\'"[0]){
-			++sqlCursol;
-
-			// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
-			sqlCursol = find_if_not(sqlCursol, sqlEnd, [](char c){return c != "\'"[0];});
-			if (sqlCursol == sqlEnd) {
-				throw ResultValue::ERR_TOKEN_CANT_READ;
-			}
-			++sqlCursol;
-
-			tokens->push_back(Token(TokenKind::STRING_LITERAL, string(sqlBackPoint, sqlCursol)));
+		StringLiteralReader reader2;
+		token = reader2.Read(sqlCursol, sqlEnd);
+		if (token) {
+			tokens->push_back(*token);
 			continue;
 		}
 

@@ -17,7 +17,6 @@ class SqlQuery {
 	const std::string alpahUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; //!< 全てのアルファベットの大文字小文字とアンダーバーです。
 	const std::string alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; //!< 全ての数字とアルファベットの大文字小文字とアンダーバーです。
 	const std::string signNum = "+-0123456789"; //!< 全ての符号と数字です。
-	const std::string num = "0123456789"; //!< 全ての数字です。
 	const std::string space = " \t\r\n"; //!< 全ての空白文字です。
 	
 	const std::vector<Token> keywordConditions; //!< キーワードをトークンとして認識するためのキーワード一覧情報です。
