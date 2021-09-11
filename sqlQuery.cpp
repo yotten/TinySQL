@@ -5,6 +5,7 @@
 #include "resultValue.hpp"
 #include "intLiteralReader.hpp"
 #include "stringLiteralReader.hpp"
+#include "keywordReader.hpp"
 
 using namespace std;
 
@@ -12,7 +13,7 @@ using namespace std;
 //! @param [in] sql 実行するSQLです。
 SqlQuery::SqlQuery(const string sql) :
 	keywordConditions({
-		{ TokenKind::AND, "AND" },
+		//{ TokenKind::AND, "AND" },
 		{ TokenKind::ASC, "ASC" },
 		{ TokenKind::BY, "BY" },
 		{ TokenKind::DESC, "DESC" },
@@ -80,6 +81,7 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 	{
 		make_shared<IntLiteralReader>(),
 		make_shared<StringLiteralReader>(),
+		make_shared<KeywordReader>(TokenKind::AND, "AND"),
 	};
 
 	auto backPoint = sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
