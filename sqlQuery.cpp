@@ -75,6 +75,13 @@ bool SqlQuery::Equali(const string str1, const string str2)
 //! @return 切り出されたトークンです。
 const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 {
+	// トークンを読み込む方法の集合です。
+	vector<shared_ptr<TokenReader>> readers = 
+	{
+		make_shared<IntLiteralReader>(),
+		make_shared<StringLiteralReader>(),
+	};
+
 	auto sqlBackPoint = sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
 	auto sqlCursol = sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 	auto sqlEnd = sql.end(); // sqlのendを指します。
@@ -90,27 +97,22 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 			break;
 		}
 
-		// 数値リテラルを読み込みます。
-		IntLiteralReader reader;
-		auto token = reader.Read(sqlCursol, sqlEnd);
-		if (token) {
-			tokens->push_back(*token);
-			continue;
+		// 各種トークンを読み込み
+		bool found = false;
+		for (auto &reader : readers) {
+			auto token = reader->Read(sqlCursol, sqlEnd);
+			if (token) {
+				tokens->push_back(*token);
+				found = true;
+				break;
+			}
 		}
-
-		// 文字列リテラルを読み込みます。
-		sqlBackPoint = sqlCursol;
-
-		// 文字列リテラルを開始するシングルクォートを判別し、読み込みます。
-		StringLiteralReader reader2;
-		token = reader2.Read(sqlCursol, sqlEnd);
-		if (token) {
-			tokens->push_back(*token);
+		if (found) {
 			continue;
 		}
 
 		// キーワードを読み込みます。
-		bool found = false;
+		found = false;
 
 		auto keyword = find_if(keywordConditions.begin(), keywordConditions.end(),
 			[&](Token keyword) {
