@@ -84,7 +84,7 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 		make_shared<SignReader>(TokenKind::SLASH, "/"),
 		make_shared<IdentifierReader>(),
 	};
-	auto backPoint = sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
+
 	auto cursol = sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 	auto end = sql.end(); // sqlのendを指します。
 
