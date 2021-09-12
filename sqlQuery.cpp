@@ -100,20 +100,16 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 		}
 
 		// 各種トークンを読み込み
-		bool found = false;
-		for (auto &reader : readers) {
-			auto token = reader->Read(cursol, end);
-			if (token) {
+		shared_ptr<const Token> token;
+		if (any_of(readers.begin(), readers.end(),
+			[&](const shared_ptr<const TokenReader>& reader) {
+				return token = reader->Read(cursol, end);
+			})) {
 				tokens->push_back(*token);
-				found = true;
-				break;
-			}
 		}
-		if (found) {
-			continue;
+		else {
+			throw ResultValue::ERR_TOKEN_CANT_READ;
 		}
-
-		throw ResultValue::ERR_TOKEN_CANT_READ;
 	}
 
 	return tokens;
