@@ -7,6 +7,7 @@
 #include "stringLiteralReader.hpp"
 #include "keywordReader.hpp"
 #include "signReader.hpp"
+#include "identifierReader.hpp"
 
 using namespace std;
 
@@ -81,6 +82,7 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 		make_shared<SignReader>(TokenKind::OPEN_PAREN, "("),
 		make_shared<SignReader>(TokenKind::PLUS, "+"),
 		make_shared<SignReader>(TokenKind::SLASH, "/"),
+		make_shared<IdentifierReader>(),
 	};
 	auto backPoint = sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
 	auto cursol = sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
@@ -108,17 +110,6 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 			}
 		}
 		if (found) {
-			continue;
-		}
-
-		// キーワードを読み込みます。
-		found = false;
-
-		// 識別子を読み込みます。
-		backPoint = cursol;
-		if (alpahUnder.find(*cursol++) != string::npos) {
-			cursol = find_if(cursol, end, [&](const char c){return alpahNumUnder.find(c) == string::npos;});
-			tokens->push_back(Token(TokenKind::IDENTIFIER, string(backPoint, cursol)));
 			continue;
 		}
 
