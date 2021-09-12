@@ -55,7 +55,7 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 {
 	// トークンを読み込む方法の集合です。
 	// 先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
-	vector<shared_ptr<TokenReader>> readers = 
+	const vector<shared_ptr<const TokenReader>> readers = 
 	{
 		make_shared<IntLiteralReader>(),
 		make_shared<StringLiteralReader>(),
