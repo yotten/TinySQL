@@ -1,15 +1,15 @@
 CFLAGS=-std=c++17 #-Wall
 LDFLAGS=-pthread -lgtest_main -lgtest
 
-test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o intLiteralReader.o stringLiteralReader.o tokenReader.o keywordReader.o
-	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o intLiteralReader.o stringLiteralReader.o tokenReader.o keywordReader.o $(CFLAGS) $(LDFLAGS)
+test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o intLiteralReader.o stringLiteralReader.o tokenReader.o keywordReader.o signReader.o
+	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o intLiteralReader.o stringLiteralReader.o tokenReader.o keywordReader.o signReader.o $(CFLAGS) $(LDFLAGS)
 	./testExecuteSQL
 
 #testExecuteSQL.o: testExecuteSQL.cpp
 testExecuteSQL.o: testExecuteSQL.cpp 
 	g++ -c $(CFLAGS) testExecuteSQL.cpp
 
-ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp extension_tree_node.hpp column_index.hpp sqlQuery.hpp inputTable.hpp resultValue.hpp intLiteralReader.hpp stringLiteralReader.hpp tokenReader.hpp keywordReader.hpp
+ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp extension_tree_node.hpp column_index.hpp sqlQuery.hpp inputTable.hpp resultValue.hpp intLiteralReader.hpp stringLiteralReader.hpp tokenReader.hpp keywordReader.hpp signReader.hpp
 	g++ -c $(CFLAGS) ExecuteSQL.cpp
 
 data.o: data.cpp data.hpp
@@ -44,6 +44,9 @@ tokenReader.o: tokenReader.cpp tokenReader.hpp
 
 keywordReader.o: keywordReader.cpp keywordReader.hpp
 	g++ -c $(CFLAGS) keywordReader.cpp
+
+signReader.o: signReader.hpp signReader.hpp
+	g++ -c $(CFLAGS) signReader.cpp
 
 clean:
 	rm -f *.o

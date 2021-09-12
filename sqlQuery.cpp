@@ -6,6 +6,7 @@
 #include "intLiteralReader.hpp"
 #include "stringLiteralReader.hpp"
 #include "keywordReader.hpp"
+#include "signReader.hpp"
 
 using namespace std;
 
@@ -13,7 +14,7 @@ using namespace std;
 //! @param [in] sql 実行するSQLです。
 SqlQuery::SqlQuery(const string sql) :
 	signConditions({
-		{ TokenKind::GREATER_THAN_OR_EQUAL, ">=" },
+//		{ TokenKind::GREATER_THAN_OR_EQUAL, ">=" },
 		{ TokenKind::LESS_THAN_OR_EQUAL, "<=" },
 		{ TokenKind::NOT_EQUAL, "<>" },
 		{ TokenKind::ASTERISK, "*" },
@@ -81,6 +82,7 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 		make_shared<KeywordReader>(TokenKind::OR, "OR"),
 		make_shared<KeywordReader>(TokenKind::SELECT, "SELECT"),
 		make_shared<KeywordReader>(TokenKind::WHERE, "WHERE"),
+		make_shared<SignReader>(TokenKind::GREATER_THAN_OR_EQUAL, ">="),
 	};
 	auto backPoint = sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
 	auto cursol = sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
