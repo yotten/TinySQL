@@ -19,7 +19,7 @@ class SqlQuery {
 	const std::string signNum = "+-0123456789"; //!< 全ての符号と数字です。
 	const std::string space = " \t\r\n"; //!< 全ての空白文字です。
 	
-	const std::vector<Token> keywordConditions; //!< キーワードをトークンとして認識するためのキーワード一覧情報です。
+	// signConditionsは先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
 	const std::vector<Token> signConditions;    //!< 記号をトークンとして認識するための記号一覧情報です。
 	const std::vector<Operator> operators;      //!< 演算子の情報です。
     std::shared_ptr<const SqlQueryInfo> queryInfo; //!< SQLに記述された内容です。

@@ -12,16 +12,6 @@ using namespace std;
 //! SqlQueryクラスの新しいインスタンスを初期化します。
 //! @param [in] sql 実行するSQLです。
 SqlQuery::SqlQuery(const string sql) :
-	keywordConditions({
-		//{ TokenKind::AND, "AND" },
-		{ TokenKind::ASC, "ASC" },
-		{ TokenKind::BY, "BY" },
-		{ TokenKind::DESC, "DESC" },
-		{ TokenKind::FROM, "FROM" },
-		{ TokenKind::ORDER, "ORDER" },
-		{ TokenKind::OR, "OR" },
-		{ TokenKind::SELECT, "SELECT" },
-		{ TokenKind::WHERE, "WHERE" }}),
 	signConditions({
 		{ TokenKind::GREATER_THAN_OR_EQUAL, ">=" },
 		{ TokenKind::LESS_THAN_OR_EQUAL, "<=" },
@@ -77,13 +67,21 @@ bool SqlQuery::Equali(const string str1, const string str2)
 const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 {
 	// トークンを読み込む方法の集合です。
+	// 先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
 	vector<shared_ptr<TokenReader>> readers = 
 	{
 		make_shared<IntLiteralReader>(),
 		make_shared<StringLiteralReader>(),
 		make_shared<KeywordReader>(TokenKind::AND, "AND"),
+		make_shared<KeywordReader>(TokenKind::ASC, "ASC"),
+		make_shared<KeywordReader>(TokenKind::BY, "BY"),
+		make_shared<KeywordReader>(TokenKind::DESC, "DESC"),
+		make_shared<KeywordReader>(TokenKind::FROM, "FROM"),
+		make_shared<KeywordReader>(TokenKind::ORDER, "ORDER"),
+		make_shared<KeywordReader>(TokenKind::OR, "OR"),
+		make_shared<KeywordReader>(TokenKind::SELECT, "SELECT"),
+		make_shared<KeywordReader>(TokenKind::WHERE, "WHERE"),
 	};
-
 	auto backPoint = sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
 	auto cursol = sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 	auto end = sql.end(); // sqlのendを指します。
@@ -115,25 +113,6 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 
 		// キーワードを読み込みます。
 		found = false;
-
-		auto keyword = find_if(keywordConditions.begin(), keywordConditions.end(),
-			[&](Token keyword) {
-				auto result = mismatch(keyword.word.begin(), keyword.word.end(), cursol,
-					[](const char keywordChar, const char sqlChar){return keywordChar == toupper(sqlChar);});
-				
-				if (result.first == keyword.word.end() &&
-					result.second != end && alpahNumUnder.find(*result.second) == string::npos) {
-						cursol = result.second;
-				}
-				else {
-					return false;
-				}
-			}
-		);
-		if (keyword != keywordConditions.end()){
-			tokens->push_back(Token(keyword->kind));
-			continue;
-		}
 
 		// 記号を読み込みます。
 		auto sign = find_if(signConditions.begin(), signConditions.end(),

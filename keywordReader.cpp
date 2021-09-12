@@ -2,6 +2,9 @@
 
 using namespace std;
 
+//! KeywordReaderクラスの新しいインスタンスを初期化します。
+//! @param [in] kind トークンの種類です。
+//! @param [in] word キーワードの文字列です。
 KeywordReader::KeywordReader(const TokenKind kind, const string word) : keyword(kind, word)
 {
 
