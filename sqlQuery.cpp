@@ -14,6 +14,35 @@ using namespace std;
 //! SqlQueryクラスの新しいインスタンスを初期化します。
 //! @param [in] sql 実行するSQLです。
 SqlQuery::SqlQuery(const string sql) :
+// 先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
+	tokenReaders({
+		make_shared<IntLiteralReader>(),
+		make_shared<StringLiteralReader>(),
+		make_shared<KeywordReader>(TokenKind::AND, "AND"),
+		make_shared<KeywordReader>(TokenKind::ASC, "ASC"),
+		make_shared<KeywordReader>(TokenKind::BY, "BY"),
+		make_shared<KeywordReader>(TokenKind::DESC, "DESC"),
+		make_shared<KeywordReader>(TokenKind::FROM, "FROM"),
+		make_shared<KeywordReader>(TokenKind::ORDER, "ORDER"),
+		make_shared<KeywordReader>(TokenKind::OR, "OR"),
+		make_shared<KeywordReader>(TokenKind::SELECT, "SELECT"),
+		make_shared<KeywordReader>(TokenKind::WHERE, "WHERE"),
+		make_shared<SignReader>(TokenKind::GREATER_THAN_OR_EQUAL, ">="),
+		make_shared<SignReader>(TokenKind::LESS_THAN_OR_EQUAL, "<="),
+		make_shared<SignReader>(TokenKind::NOT_EQUAL, "<>"),
+		make_shared<SignReader>(TokenKind::ASTERISK, "*"),
+		make_shared<SignReader>(TokenKind::COMMA, ","),
+		make_shared<SignReader>(TokenKind::CLOSE_PAREN, ")"),
+		make_shared<SignReader>(TokenKind::DOT, "."),
+		make_shared<SignReader>(TokenKind::EQUAL, "="),
+		make_shared<SignReader>(TokenKind::GREATER_THAN, ">" ),
+		make_shared<SignReader>(TokenKind::LESS_THAN, "<"),
+		make_shared<SignReader>(TokenKind::MINUS, "-"),
+		make_shared<SignReader>(TokenKind::OPEN_PAREN, "("),
+		make_shared<SignReader>(TokenKind::PLUS, "+"),
+		make_shared<SignReader>(TokenKind::SLASH, "/"),
+		make_shared<IdentifierReader>(),
+	}),
 	operators({
 		{ TokenKind::ASTERISK, 1 },
 		{ TokenKind::SLASH, 1 },
@@ -55,35 +84,35 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 {
 	// トークンを読み込む方法の集合です。
 	// 先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
-	const vector<shared_ptr<const TokenReader>> readers = 
-	{
-		make_shared<IntLiteralReader>(),
-		make_shared<StringLiteralReader>(),
-		make_shared<KeywordReader>(TokenKind::AND, "AND"),
-		make_shared<KeywordReader>(TokenKind::ASC, "ASC"),
-		make_shared<KeywordReader>(TokenKind::BY, "BY"),
-		make_shared<KeywordReader>(TokenKind::DESC, "DESC"),
-		make_shared<KeywordReader>(TokenKind::FROM, "FROM"),
-		make_shared<KeywordReader>(TokenKind::ORDER, "ORDER"),
-		make_shared<KeywordReader>(TokenKind::OR, "OR"),
-		make_shared<KeywordReader>(TokenKind::SELECT, "SELECT"),
-		make_shared<KeywordReader>(TokenKind::WHERE, "WHERE"),
-		make_shared<SignReader>(TokenKind::GREATER_THAN_OR_EQUAL, ">="),
-		make_shared<SignReader>(TokenKind::LESS_THAN_OR_EQUAL, "<="),
-		make_shared<SignReader>(TokenKind::NOT_EQUAL, "<>"),
-		make_shared<SignReader>(TokenKind::ASTERISK, "*"),
-		make_shared<SignReader>(TokenKind::COMMA, ","),
-		make_shared<SignReader>(TokenKind::CLOSE_PAREN, ")"),
-		make_shared<SignReader>(TokenKind::DOT, "."),
-		make_shared<SignReader>(TokenKind::EQUAL, "="),
-		make_shared<SignReader>(TokenKind::GREATER_THAN, ">" ),
-		make_shared<SignReader>(TokenKind::LESS_THAN, "<"),
-		make_shared<SignReader>(TokenKind::MINUS, "-"),
-		make_shared<SignReader>(TokenKind::OPEN_PAREN, "("),
-		make_shared<SignReader>(TokenKind::PLUS, "+"),
-		make_shared<SignReader>(TokenKind::SLASH, "/"),
-		make_shared<IdentifierReader>(),
-	};
+	// const vector<shared_ptr<const TokenReader>> readers = 
+	// {
+	// 	make_shared<IntLiteralReader>(),
+	// 	make_shared<StringLiteralReader>(),
+	// 	make_shared<KeywordReader>(TokenKind::AND, "AND"),
+	// 	make_shared<KeywordReader>(TokenKind::ASC, "ASC"),
+	// 	make_shared<KeywordReader>(TokenKind::BY, "BY"),
+	// 	make_shared<KeywordReader>(TokenKind::DESC, "DESC"),
+	// 	make_shared<KeywordReader>(TokenKind::FROM, "FROM"),
+	// 	make_shared<KeywordReader>(TokenKind::ORDER, "ORDER"),
+	// 	make_shared<KeywordReader>(TokenKind::OR, "OR"),
+	// 	make_shared<KeywordReader>(TokenKind::SELECT, "SELECT"),
+	// 	make_shared<KeywordReader>(TokenKind::WHERE, "WHERE"),
+	// 	make_shared<SignReader>(TokenKind::GREATER_THAN_OR_EQUAL, ">="),
+	// 	make_shared<SignReader>(TokenKind::LESS_THAN_OR_EQUAL, "<="),
+	// 	make_shared<SignReader>(TokenKind::NOT_EQUAL, "<>"),
+	// 	make_shared<SignReader>(TokenKind::ASTERISK, "*"),
+	// 	make_shared<SignReader>(TokenKind::COMMA, ","),
+	// 	make_shared<SignReader>(TokenKind::CLOSE_PAREN, ")"),
+	// 	make_shared<SignReader>(TokenKind::DOT, "."),
+	// 	make_shared<SignReader>(TokenKind::EQUAL, "="),
+	// 	make_shared<SignReader>(TokenKind::GREATER_THAN, ">" ),
+	// 	make_shared<SignReader>(TokenKind::LESS_THAN, "<"),
+	// 	make_shared<SignReader>(TokenKind::MINUS, "-"),
+	// 	make_shared<SignReader>(TokenKind::OPEN_PAREN, "("),
+	// 	make_shared<SignReader>(TokenKind::PLUS, "+"),
+	// 	make_shared<SignReader>(TokenKind::SLASH, "/"),
+	// 	make_shared<IdentifierReader>(),
+	// };
 
 	auto cursol = sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 	auto end = sql.end(); // sqlのendを指します。
@@ -101,7 +130,7 @@ const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 
 		// 各種トークンを読み込み
 		shared_ptr<const Token> token;
-		if (any_of(readers.begin(), readers.end(),
+		if (any_of(tokenReaders.begin(), tokenReaders.end(),
 			[&](const shared_ptr<const TokenReader>& reader) {
 				return token = reader->Read(cursol, end);
 			})) {
