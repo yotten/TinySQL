@@ -11,8 +11,6 @@ class SqlQueryInfo {
 }
 class SqlQuery {
 	-ofstream outputFile
-	-const string alpahUnder
-	-const string alpahNumUnder
 	-const string signNum
 	-const string space
 	-const vector<const Operator> operators
