@@ -3,36 +3,46 @@
 #include "column_index.hpp"
 #include "sqlQueryInfo.hpp"
 #include "resultValue.hpp"
+#include "intLiteralReader.hpp"
+#include "stringLiteralReader.hpp"
+#include "keywordReader.hpp"
+#include "signReader.hpp"
+#include "identifierReader.hpp"
+
 using namespace std;
 
 //! SqlQueryクラスの新しいインスタンスを初期化します。
 //! @param [in] sql 実行するSQLです。
 SqlQuery::SqlQuery(const string sql) :
-	keywordConditions({
-		{ TokenKind::AND, "AND" },
-		{ TokenKind::ASC, "ASC" },
-		{ TokenKind::BY, "BY" },
-		{ TokenKind::DESC, "DESC" },
-		{ TokenKind::FROM, "FROM" },
-		{ TokenKind::ORDER, "ORDER" },
-		{ TokenKind::OR, "OR" },
-		{ TokenKind::SELECT, "SELECT" },
-		{ TokenKind::WHERE, "WHERE" }}),
-	signConditions({
-		{ TokenKind::GREATER_THAN_OR_EQUAL, ">=" },
-		{ TokenKind::LESS_THAN_OR_EQUAL, "<=" },
-		{ TokenKind::NOT_EQUAL, "<>" },
-		{ TokenKind::ASTERISK, "*" },
-		{ TokenKind::COMMA, "," },
-		{ TokenKind::CLOSE_PAREN, ")" },
-		{ TokenKind::DOT, "." },
-		{ TokenKind::EQUAL, "=" },
-		{ TokenKind::GREATER_THAN, ">" },
-		{ TokenKind::LESS_THAN, "<" },
-		{ TokenKind::MINUS, "-" },
-		{ TokenKind::OPEN_PAREN, "(" },
-		{ TokenKind::PLUS, "+" },
-		{ TokenKind::SLASH, "/" }}),
+// 先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
+	tokenReaders({
+		make_shared<IntLiteralReader>(),
+		make_shared<StringLiteralReader>(),
+		make_shared<KeywordReader>(TokenKind::AND, "AND"),
+		make_shared<KeywordReader>(TokenKind::ASC, "ASC"),
+		make_shared<KeywordReader>(TokenKind::BY, "BY"),
+		make_shared<KeywordReader>(TokenKind::DESC, "DESC"),
+		make_shared<KeywordReader>(TokenKind::FROM, "FROM"),
+		make_shared<KeywordReader>(TokenKind::ORDER, "ORDER"),
+		make_shared<KeywordReader>(TokenKind::OR, "OR"),
+		make_shared<KeywordReader>(TokenKind::SELECT, "SELECT"),
+		make_shared<KeywordReader>(TokenKind::WHERE, "WHERE"),
+		make_shared<SignReader>(TokenKind::GREATER_THAN_OR_EQUAL, ">="),
+		make_shared<SignReader>(TokenKind::LESS_THAN_OR_EQUAL, "<="),
+		make_shared<SignReader>(TokenKind::NOT_EQUAL, "<>"),
+		make_shared<SignReader>(TokenKind::ASTERISK, "*"),
+		make_shared<SignReader>(TokenKind::COMMA, ","),
+		make_shared<SignReader>(TokenKind::CLOSE_PAREN, ")"),
+		make_shared<SignReader>(TokenKind::DOT, "."),
+		make_shared<SignReader>(TokenKind::EQUAL, "="),
+		make_shared<SignReader>(TokenKind::GREATER_THAN, ">" ),
+		make_shared<SignReader>(TokenKind::LESS_THAN, "<"),
+		make_shared<SignReader>(TokenKind::MINUS, "-"),
+		make_shared<SignReader>(TokenKind::OPEN_PAREN, "("),
+		make_shared<SignReader>(TokenKind::PLUS, "+"),
+		make_shared<SignReader>(TokenKind::SLASH, "/"),
+		make_shared<IdentifierReader>(),
+	}),
 	operators({
 		{ TokenKind::ASTERISK, 1 },
 		{ TokenKind::SLASH, 1 },
@@ -72,107 +82,31 @@ bool SqlQuery::Equali(const string str1, const string str2)
 //! @return 切り出されたトークンです。
 const shared_ptr<vector<Token>> SqlQuery::GetTokens(const string sql) const
 {
-	auto sqlBackPoint = sql.begin(); // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
-	auto sqlCursol = sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
-	auto sqlEnd = sql.end(); // sqlのendを指します。
+	auto cursol = sql.begin(); // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
+	auto end = sql.end(); // sqlのendを指します。
 
 	auto tokens = make_shared<vector<Token>>(); //読み込んだトークンです。
 
 	// SQLをトークンに分割て読み込みます。
-	while (sqlCursol != sqlEnd){
+	while (cursol != end){
 
 		// 空白を読み飛ばします。
-		sqlCursol = find_if(sqlCursol, sqlEnd, [&](char c){return space.find(c) == string::npos;});
-		if (sqlCursol == sqlEnd) {
+		cursol = find_if(cursol, end, [&](char c){return space.find(c) == string::npos;});
+		if (cursol == end) {
 			break;
 		}
 
-		// 数値リテラルを読み込みます。
-
-		// 先頭文字が数字であるかどうかを確認します。
-		sqlBackPoint = sqlCursol;
-		sqlCursol = find_if(sqlCursol, sqlEnd, [&](char c){return num.find(c) == string::npos;});
-		if (sqlCursol != sqlBackPoint && (
-			alpahUnder.find(*sqlCursol) == string::npos || // 数字の後にすぐに識別子が続くのは紛らわしいので数値リテラルとは扱いません。
-			sqlCursol == sqlEnd)) {
-				tokens->push_back(Token(TokenKind::INT_LITERAL, string(sqlBackPoint, sqlCursol)));
-				continue;
+		// 各種トークンを読み込み
+		shared_ptr<const Token> token;
+		if (any_of(tokenReaders.begin(), tokenReaders.end(),
+			[&](const shared_ptr<const TokenReader>& reader) {
+				return token = reader->Read(cursol, end);
+			})) {
+				tokens->push_back(*token);
 		}
 		else {
-			sqlCursol = sqlBackPoint;
+			throw ResultValue::ERR_TOKEN_CANT_READ;
 		}
-
-		// 文字列リテラルを読み込みます。
-		sqlBackPoint = sqlCursol;
-
-		// 文字列リテラルを開始するシングルクォートを判別し、読み込みます。
-		// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
-		if (*sqlCursol  == "\'"[0]){
-			++sqlCursol;
-
-			// メトリクス測定ツールのccccはシングルクォートの文字リテラル中のエスケープを認識しないため、文字リテラルを使わないことで回避しています。
-			sqlCursol = find_if_not(sqlCursol, sqlEnd, [](char c){return c != "\'"[0];});
-			if (sqlCursol == sqlEnd) {
-				throw ResultValue::ERR_TOKEN_CANT_READ;
-			}
-			++sqlCursol;
-
-			tokens->push_back(Token(TokenKind::STRING_LITERAL, string(sqlBackPoint, sqlCursol)));
-			continue;
-		}
-
-		// キーワードを読み込みます。
-		bool found = false;
-
-		auto keyword = find_if(keywordConditions.begin(), keywordConditions.end(),
-			[&](Token keyword) {
-				auto result = mismatch(keyword.word.begin(), keyword.word.end(), sqlCursol,
-					[](const char keywordChar, const char sqlChar){return keywordChar == toupper(sqlChar);});
-				
-				if (result.first == keyword.word.end() &&
-					result.second != sqlEnd && alpahNumUnder.find(*result.second) == string::npos) {
-						sqlCursol = result.second;
-				}
-				else {
-					return false;
-				}
-			}
-		);
-		if (keyword != keywordConditions.end()){
-			tokens->push_back(Token(keyword->kind));
-			continue;
-		}
-
-		// 記号を読み込みます。
-		auto sign = find_if(signConditions.begin(), signConditions.end(),
-			[&](Token keyword) {
-				auto result = mismatch(keyword.word.begin(), keyword.word.end(), sqlCursol,
-					[](const char keywordChar, const char sqlChar){return keywordChar == toupper(sqlChar);});
-
-				if (result.first == keyword.word.end()) {
-					sqlCursol = result.second;
-					return true;
-				}
-				else {
-					return false;
-				}
-			}
-		);
-		
-		if (sign != signConditions.end()) {
-			tokens->push_back(Token(sign->kind));
-			continue;
-		}
-
-		// 識別子を読み込みます。
-		sqlBackPoint = sqlCursol;
-		if (alpahUnder.find(*sqlCursol++) != string::npos) {
-			sqlCursol = find_if(sqlCursol, sqlEnd, [&](const char c){return alpahNumUnder.find(c) == string::npos;});
-			tokens->push_back(Token(TokenKind::IDENTIFIER, string(sqlBackPoint, sqlCursol)));
-			continue;
-		}
-
-		throw ResultValue::ERR_TOKEN_CANT_READ;
 	}
 
 	return tokens;

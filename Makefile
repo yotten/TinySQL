@@ -1,15 +1,15 @@
 CFLAGS=-std=c++17 #-Wall
 LDFLAGS=-pthread -lgtest_main -lgtest
 
-test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o
-	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o $(CFLAGS) $(LDFLAGS)
+test: testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o intLiteralReader.o stringLiteralReader.o tokenReader.o keywordReader.o signReader.o identifierReader.o
+	g++ -o testExecuteSQL testExecuteSQL.o ExecuteSQL.o data.o operator.o token.o column.o extension_tree_node.o column_index.o sqlQuery.o intLiteralReader.o stringLiteralReader.o tokenReader.o keywordReader.o signReader.o identifierReader.o $(CFLAGS) $(LDFLAGS)
 	./testExecuteSQL
 
 #testExecuteSQL.o: testExecuteSQL.cpp
 testExecuteSQL.o: testExecuteSQL.cpp 
 	g++ -c $(CFLAGS) testExecuteSQL.cpp
 
-ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp extension_tree_node.hpp column_index.hpp sqlQuery.hpp inputTable.hpp resultValue.hpp 
+ExecuteSQL.o: ExecuteSQL.cpp data.hpp operator.hpp token.hpp token_kind.hpp column.hpp extension_tree_node.hpp column_index.hpp sqlQuery.hpp inputTable.hpp resultValue.hpp intLiteralReader.hpp stringLiteralReader.hpp tokenReader.hpp keywordReader.hpp signReader.hpp identifierReader.hpp
 	g++ -c $(CFLAGS) ExecuteSQL.cpp
 
 data.o: data.cpp data.hpp
@@ -32,6 +32,24 @@ column_index.o: column_index.cpp column_index.hpp
 
 sqlQuery.o: sqlQuery.cpp sqlQuery.hpp sqlQueryInfo.hpp resultValue.hpp
 	g++ -c $(CFLAGS) -fpermissive sqlQuery.cpp
+
+intLiteralReader.o: intLiteralReader.cpp intLiteralReader.hpp
+	g++ -c $(CFLAGS) intLiteralReader.cpp
+
+stringLiteralReader.o: stringLiteralReader.cpp stringLiteralReader.hpp
+	g++ -c $(CFLAGS) stringLiteralReader.cpp
+
+tokenReader.o: tokenReader.cpp tokenReader.hpp
+	g++ -c $(CFLAGS) tokenReader.cpp
+
+keywordReader.o: keywordReader.cpp keywordReader.hpp
+	g++ -c $(CFLAGS) keywordReader.cpp
+
+signReader.o: signReader.cpp signReader.hpp
+	g++ -c $(CFLAGS) signReader.cpp
+
+identifierReader.o: identifierReader.cpp identifierReader.hpp
+	g++ -c $(CFLAGS) identifierReader.cpp
 
 clean:
 	rm -f *.o

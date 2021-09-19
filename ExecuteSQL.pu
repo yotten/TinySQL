@@ -6,18 +6,13 @@ class SqlQueryInfo {
 	+vector<TokenKind> orders
 	+shared_ptr<ExtensionTreeNode> whereTopNode
 	+vector<Column> selectColumns
-	+vector<std::shared_ptr<ExtensionTreeNode>> whereExtensionNodes
+	+vector<shared_ptr<ExtensionTreeNode>> whereExtensionNodes
 	+vector<Column> orderByColumns
 }
 class SqlQuery {
 	-ofstream outputFile
-	-const string alpahUnder
-	-const string alpahNumUnder
 	-const string signNum
-	-const string num
 	-const string space
-	-const vector<const Token> keywordConditions
-	-const vector<const Token> signConditions
 	-const vector<const Operator> operators
 	-vector<const Token> tokens
 	-void CheckClosingFiles()
@@ -79,6 +74,22 @@ class Column{
     +Column(const string columnName)
     +Column(const string tableName, const string columnName)
 }
+class IntLiteralReader {
+	#const shared_ptr<const Token> Read(string::const_iterator &cursol, const string::const_iterator& end) const;
+}
+class StringLiteralReader {
+	#const shared_ptr<const Token> Read(string::const_iterator &cursol, const string::const_iterator& end) const
+}
+class TokenReader {
+    #const string alpahUnder
+	#const string alpahNumUnder
+	#const string signNum
+	#const string num
+	#const string space
+	#const shared_ptr<const Token> ReadCore(string::const_iterator &cursol, const string::const_iterator& end)
+	+const shared_ptr<const Token> Read(string::const_iterator &cursol, const string::const_iterator& end) const;
+}
+
 enum DataType{
    	STRING
 	INTEGER
@@ -140,6 +151,17 @@ Column <-- SqlQuery
 ResultValue <-- SqlQuery
 SqlQueryInfo <-- SqlQuery
 InputTable <-- SqlQuery
+'IntLiteralReader <-- SqlQuery
+'StringLiteralReader <-- SqlQuery
+TokenReader <-- SqlQuery
+
+Token <-- IntLiteralReader
+Token <-- StringLiteralReader
+Token <-- TokenReader
+ResultValue <-- StringLiteralReader
+
+TokenReader <|-- IntLiteralReader
+TokenReader <|-- StringLiteralReader
 
 Column <-- InputTable
 Data <-- InputTable
