@@ -5,7 +5,7 @@ using namespace std;
 //! KeywordReaderクラスの新しいインスタンスを初期化します。
 //! @param [in] kind トークンの種類です。
 //! @param [in] word キーワードの文字列です。
-KeywordReader::KeywordReader(const TokenKind kind, const string word) : keyword(kind, word)
+KeywordReader::KeywordReader(const TokenKind kind, const string word) : keyword(Token(kind, word))
 {
 
 }
@@ -22,9 +22,17 @@ const shared_ptr<const Token> KeywordReader::ReadCore(string::const_iterator &cu
     });
 
     if (result.first == keyword.word.end() &&
-        result.second != end && alpahNumUnder.find(*result.second) == string::npos) {
+        CheckNextChar(result.second, end)) {
             cursol = result.second;
             return make_shared<Token>(keyword);
     }
     return nullptr;
+}
+//! キーワードの次の文字のチェックを行います。
+//! @param [in] next チェック対象となる次の文字のイテレータです。
+//! @param [in] next endイテレータです。
+const bool KeywordReader::CheckNextChar(const string::const_iterator& next, const string::const_iterator& end) const
+{
+	//キーワードに識別子が区切りなしに続いていないかを確認します。
+    return next != end && alpahNumUnder.find(*next) == string::npos;
 }
